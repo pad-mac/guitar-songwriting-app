@@ -16,8 +16,52 @@
   <title>Chords</title>
 </head>
 <body class="v">
-  <div id="app">
+
+  <!-- sign in -->
+  <section id="v-login" class="view login" hidden>
+    <form id="loginForm" class="login-card" autocomplete="on">
+      <h1>Chords</h1>
+      <p id="loginText"></p>
+      <input id="pw" type="password" class="name-input" placeholder="Password" autocomplete="current-password" required>
+      <input id="pw2" type="password" class="name-input" placeholder="Repeat the password" autocomplete="new-password" hidden>
+      <button type="submit" class="primary" id="loginBtn">Sign in</button>
+      <p id="loginErr" class="err" role="alert"></p>
+    </form>
+  </section>
+
+  <!-- songs -->
+  <section id="v-songs" class="view page" hidden>
+    <header class="page-top">
+      <h1 class="page-title">Songs</h1>
+      <button id="openScratch" type="button" class="ghost-btn">Analyzer</button>
+    </header>
+    <ul id="songList" class="song-list"></ul>
+    <p id="songsEmpty" class="empty-note" hidden>No songs yet. Tap + to start one.</p>
+    <button id="newSong" type="button" class="fab" aria-label="New song" title="New song"></button>
+  </section>
+
+  <!-- one song -->
+  <section id="v-song" class="view page" hidden>
+    <header class="page-top">
+      <button id="songBack" type="button" class="ghost-btn back" aria-label="Songs"></button>
+      <div class="title-wrap">
+        <h1 id="songTitle" class="page-title editable" title="Rename"></h1>
+        <p id="songMeta" class="page-meta"></p>
+      </div>
+      <button id="songTuning" type="button" class="tuning-btn" title="Tuning for the whole song">
+        <span class="tn"></span><span class="tname"></span>
+      </button>
+    </header>
+    <div id="chordGrid" class="chord-grid"></div>
+    <p id="chordsEmpty" class="empty-note" hidden>No chords yet. Tap + to add one.</p>
+    <div class="page-foot"><button id="deleteSong" type="button" class="danger">Delete song</button></div>
+    <button id="addChord" type="button" class="fab" aria-label="Add a chord" title="Add a chord"></button>
+  </section>
+
+  <!-- analyzer -->
+  <section id="v-analyzer" class="view analyzer" hidden>
     <header class="top">
+      <button id="aBack" type="button" class="ghost-btn back" aria-label="Back"></button>
       <h1 id="current" class="current" aria-live="polite"></h1>
       <button id="tuningBtn" class="tuning-btn" type="button" title="Tuning (T)">
         <span id="tuningNotes" class="tn"></span>
@@ -47,7 +91,21 @@
       </div>
       <button id="clear" type="button" class="clear" title="Clear (Backspace)">Clear</button>
     </nav>
-  </div>
+
+    <nav id="songbar" class="songbar" hidden>
+      <button id="prevChord" type="button" class="nav prev" title="Previous chord ([) · hold to add a chord before this one">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <div class="songbar-mid">
+        <span id="chordPos" class="pos"></span>
+        <button id="saveChord" type="button" class="save" disabled title="Save to this chord (⌘S / Ctrl+S)">Save</button>
+        <button id="deleteChord" type="button" class="icon-only" aria-label="Delete this chord" title="Delete this chord"></button>
+      </div>
+      <button id="nextChord" type="button" class="nav next" title="Next chord (]) · hold to add a chord after this one">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </nav>
+  </section>
 
   <div id="sheet" class="sheet-wrap" aria-hidden="true">
     <div class="scrim"></div>
@@ -62,6 +120,13 @@
       <div id="sheetBody" class="sheet-body"></div>
     </section>
   </div>
+
+  <div id="dialog" class="dialog-wrap" aria-hidden="true">
+    <div class="scrim"></div>
+    <div class="dialog" role="alertdialog" aria-modal="true"></div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script type="module" src="js/app.js"></script>
 </body>

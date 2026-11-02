@@ -9,4 +9,10 @@ services:
     # 8081 because the News Reader already uses 8080.
     ports:
       - "127.0.0.1:8081:8080"
+    volumes:
+      # songs, chords, password: back this folder up
+      - ./data:/data
+    environment:
+      # Leave empty to set the password on the first visit.
+      APP_PASSWORD: ${APP_PASSWORD:-}
     mem_limit: 256m

@@ -1,15 +1,15 @@
 {
   "name": "guitar-songwriting-app",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Guitar chord songwriting app: pick notes on the fretboard, get the chord names",
   "scripts": {
-    "start": "node server/index.js",
-    "test": "node --test test/*.test.mjs"
+    "start": "node --disable-warning=ExperimentalWarning server/index.js",
+    "test": "node --test --test-concurrency=1 test/*.test.mjs"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.13"
   },
   "dependencies": {
     "express": "^5.1.0"
