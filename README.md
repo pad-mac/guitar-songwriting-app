@@ -38,19 +38,27 @@ sudo tailscale serve status
 
 The app is then at `https://<server>.<tailnet>.ts.net:8443`. The reader stays on port 443.
 
-### Caddy (if the reader runs that way)
+### Caddy with a DuckDNS name (if the reader runs that way)
 
-Point a second hostname at the server (for example another DuckDNS name) and add a block to `/etc/caddy/Caddyfile`:
-
-```
-chords.example.org {
-	reverse_proxy 127.0.0.1:8081
-}
-```
+1. On duckdns.org, add a second subdomain (for example `<name>-chords`) and give it the server's IP, the same as the reader's. Check: `dig +short <name>-chords.duckdns.org`.
+2. Look up the reader's hostname: `cat /etc/caddy/Caddyfile`.
+3. Write both sites into the file. With two sites each needs its own braces; the reader's two-line form only works when it is the only site.
 
 ```sh
+sudo tee /etc/caddy/Caddyfile > /dev/null <<'CADDY'
+<reader-name>.duckdns.org {
+	reverse_proxy 127.0.0.1:8080
+}
+
+<name>-chords.duckdns.org {
+	reverse_proxy 127.0.0.1:8081
+}
+CADDY
+sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
+
+Caddy fetches the certificate on the first visit (a few seconds).
 
 There is no password yet: it stores nothing on the server. A password arrives with saving, like the reader's.
 
