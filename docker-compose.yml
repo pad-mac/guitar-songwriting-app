@@ -1,6 +1,9 @@
 services:
   chords:
-    build: .
+    build:
+      context: .
+      args:
+        COMMIT: ${COMMIT:-}
     restart: unless-stopped
     # Reachable only from the server itself: put Tailscale or Caddy in front (see README).
     # 8081 because the News Reader already uses 8080.

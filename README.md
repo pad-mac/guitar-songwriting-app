@@ -58,11 +58,24 @@ There is no password yet: it stores nothing on the server. A password arrives wi
 
 Open the address in Safari, then Share → **Add to Home Screen**.
 
-### Updating
+### Updates from GitHub, automatically
+
+Once, after the install above:
 
 ```sh
-cd ~/guitar-songwriting-app && git pull && sudo docker compose up -d --build
+cd ~/guitar-songwriting-app && git pull && sudo sh deploy/install-autoupdate.sh
 ```
+
+A systemd timer then checks GitHub every minute. When `main` has a new commit, it resets the folder to it and rebuilds. The build runs the tests first; if they fail, nothing is replaced and the running version stays up. It also starts the app again if it isn't running.
+
+```sh
+journalctl -u chords-update -n 20      # what it deployed, and build errors
+curl -s 127.0.0.1:8081/healthz         # "commit" = the version that is live
+sudo sh deploy/update.sh               # update right now instead of waiting
+sudo systemctl disable --now chords-update.timer   # switch it off
+```
+
+The folder belongs to the timer: changes made there by hand are overwritten on the next update. The phone picks up a new version the next time the app is opened.
 
 ## Run it locally
 

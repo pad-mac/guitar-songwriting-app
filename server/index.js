@@ -13,7 +13,7 @@ const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', true);
 
-app.get('/healthz', (req, res) => res.json({ ok: true, version }));
+app.get('/healthz', (req, res) => res.json({ ok: true, version, commit: process.env.COMMIT || null }));
 
 // No build step and no hashed file names, so every file is revalidated (ETag) on each load:
 // an update reaches the phone on the next open instead of hiding behind a cache.
