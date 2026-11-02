@@ -33,50 +33,20 @@ Names follow Oolimo's style (`Cmaj7(9)`, `D7sus2(13)`, `Bm(addb9,add11)`), spell
 
 ## Install on the server
 
-Next to the News Reader on the same VPS. The reader uses port 8080, this app uses 8081.
+On the VPS (Ubuntu or Debian), next to the News Reader if it is there. You need the DuckDNS name and the token shown at the top of duckdns.org.
 
 ```sh
-cd ~
+sudo apt update && sudo apt install -y git
 git clone https://github.com/pad-mac/guitar-songwriting-app.git
 cd guitar-songwriting-app
-sudo docker compose up -d --build
-
-sudo docker compose logs --tail 3     # "Chords 0.2.0 on http://0.0.0.0:8080" (inside the container)
-curl -s 127.0.0.1:8081/healthz        # {"ok":true,...}
+sudo sh deploy/setup-server.sh guitarwriter YOUR-DUCKDNS-TOKEN
 ```
 
-The app listens on `127.0.0.1:8081` only. Put HTTPS in front the same way as the reader.
+`deploy/setup-server.sh` points the DuckDNS name at the server, installs Docker if needed, builds and starts the app on `127.0.0.1:8081`, turns on the automatic updates, and sets up Caddy for HTTPS. A site already in the Caddyfile (the reader) stays; the old file is kept as `Caddyfile.bak.<date>`, and if the new one does not validate, the old one is put back. It also opens ports 80 and 443 if ufw is active. Running it again is harmless.
 
-### Tailscale (if the reader runs that way)
+Then open `https://<name>.duckdns.org` and choose the password.
 
-```sh
-sudo tailscale serve --bg --https=8443 8081
-sudo tailscale serve status
-```
-
-The app is then at `https://<server>.<tailnet>.ts.net:8443`. The reader stays on port 443.
-
-### Caddy with a DuckDNS name (if the reader runs that way)
-
-1. On duckdns.org, add a second subdomain (for example `<name>-chords`) and give it the server's IP, the same as the reader's. Check: `dig +short <name>-chords.duckdns.org`.
-2. Look up the reader's hostname: `cat /etc/caddy/Caddyfile`.
-3. Write both sites into the file. With two sites each needs its own braces; the reader's two-line form only works when it is the only site.
-
-```sh
-sudo tee /etc/caddy/Caddyfile > /dev/null <<'CADDY'
-<reader-name>.duckdns.org {
-	reverse_proxy 127.0.0.1:8080
-}
-
-<name>-chords.duckdns.org {
-	reverse_proxy 127.0.0.1:8081
-}
-CADDY
-sudo caddy validate --config /etc/caddy/Caddyfile
-sudo systemctl reload caddy
-```
-
-Caddy fetches the certificate on the first visit (a few seconds).
+With Tailscale instead of a public name: skip the script's Caddy part by running only `sudo docker compose up -d --build` and `sudo sh deploy/install-autoupdate.sh`, then `sudo tailscale serve --bg --https=8443 8081`.
 
 ### On the phone
 
