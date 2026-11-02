@@ -1,0 +1,9 @@
+services:
+  chords:
+    build: .
+    restart: unless-stopped
+    # Reachable only from the server itself: put Tailscale or Caddy in front (see README).
+    # 8081 because the News Reader already uses 8080.
+    ports:
+      - "127.0.0.1:8081:8080"
+    mem_limit: 256m
