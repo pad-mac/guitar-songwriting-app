@@ -14,14 +14,14 @@ Version 0.3: songs are saved on the server, behind a password.
 - The tuning under the title changes the tuning for all chords of the song. Chords in Unsorted keep the tuning they were saved with.
 
 **Analyzer on a song**
-- ‹ and › go to the previous and next chord (sections are skipped). On the last chord, › becomes + for a new one at the end.
+- ‹ and › go to the previous and next chord (sections are skipped). On the phone, a quick swipe left or right on the fretboard does the same; a swipe from the left edge goes back to the song. On the last chord, › becomes + for a new one at the end.
 - Hold ‹ or › (half a second, the line under the arrow fills), then let go: choose **New chord** or **Duplicate this chord**, before or after the current one. Holding the + on the last chord works the same way. A duplicate opens unsaved, so you can change it before saving.
 - Changes only reach the song with **Save**, which stays grey until something differs from the saved chord. Choosing another name counts as a change, and is what the card shows. Leaving with unsaved changes asks first.
 - The bin deletes the chord.
 - Keys: `[` `]` previous/next, `{` `}` new chord before/after, ⌘S / Ctrl+S saves.
 
 **Analyzer on its own** ("Analyzer" on the songs screen):
-- **Save chord…** puts the chord into Unsorted, or at the end of a song. If that song is in another tuning, it asks first: the shape is saved as it is, so its notes follow the song's tuning.
+- **Save** puts the chord into Unsorted with one tap. **To a song…** adds it at the end of a song instead; if that song is in another tuning, it asks first, since the shape is saved as it is and its notes follow the song's tuning.
 - **Fretboard**: tap a fret to place a note, tap it again to mute the string. The row above the nut is for open strings.
 - **Names**: one name per sounding note taken as the root. The name on the bass note comes first, then the others from simplest to most involved. Tap a name to read the fretboard from that root.
 - **Notes / Intervals**: what the dots show. The row under the board shows the other.

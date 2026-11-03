@@ -1,6 +1,6 @@
 {
   "name": "guitar-songwriting-app",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "type": "module",
   "description": "Guitar chord songwriting app: pick notes on the fretboard, get the chord names",

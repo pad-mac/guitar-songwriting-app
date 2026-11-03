@@ -533,7 +533,7 @@ function updateBars() {
   $('songbar').hidden = !song;
   $('scratchbar').hidden = c?.mode !== 'scratch';
   document.body.classList.toggle('song-mode', song);
-  if (c?.mode === 'scratch') { $('saveScratch').disabled = !A.hasNotes(); return; }
+  if (c?.mode === 'scratch') { $('saveScratch').disabled = $('saveToSong').disabled = !A.hasNotes(); return; }
   if (!song) return;
   const nav = chordNav();
   $('chordPos').textContent = nav.draft ? `New · ${nav.k + 1} of ${nav.n}` : `${nav.k + 1} of ${nav.n}`;
@@ -567,15 +567,16 @@ function goTo(target) {
   navigate(target.chordId != null ? `#/song/${id}/chord/${target.chordId}` : `#/song/${id}/new/${target.at}`, { replace: true });
 }
 
-async function step(dir) {
+async function step(dir, { create = true, onGo } = {}) {
   if (S.ctx?.mode !== 'song') return;
   const nav = chordNav();
   let target = null;
   if (dir < 0) { if (nav.prev) target = { chordId: nav.prev.id }; }
   else if (nav.next) target = { chordId: nav.next.id };
-  else if (!nav.draft) target = { at: S.song.items.length };
+  else if (!nav.draft && create) target = { at: S.song.items.length };
   if (!target) return;
   if (!(await guard())) return;
+  onGo?.();
   goTo(target);
 }
 
@@ -640,20 +641,77 @@ async function deleteChord() {
   } catch (e) { toast(e.message); }
 }
 
-// the free analyzer: save the chord to Unsorted or the end of a song
+// the free analyzer: one tap saves to Unsorted; "To a song…" picks a song (chord goes at the end)
+async function saveScratchTo(target) {
+  await api('POST', `/songs/${target.id}/items`, { kind: 'chord', ...A.value(), tuning: isInbox(target) ? A.tuning : undefined });
+  const btn = $('saveScratch');
+  btn.textContent = 'Saved';
+  btn.classList.add('saved');
+  setTimeout(() => { btn.textContent = 'Save'; btn.classList.remove('saved'); }, 1100);
+  toast(`Saved to “${isInbox(target) ? 'Unsorted' : target.name}”`);
+}
 $('saveScratch').addEventListener('click', async () => {
   if (!A.hasNotes()) return;
   try {
-    const target = await pickDestination('Save this chord to');
-    if (!target || !(await tuningOk(target, A.tuning))) return;
-    await api('POST', `/songs/${target.id}/items`, { kind: 'chord', ...A.value(), tuning: isInbox(target) ? A.tuning : undefined });
-    const btn = $('saveScratch');
-    btn.textContent = 'Saved';
-    btn.classList.add('saved');
-    setTimeout(() => { btn.textContent = 'Save chord…'; btn.classList.remove('saved'); }, 1100);
-    toast(`Saved to “${isInbox(target) ? 'Unsorted' : target.name}”`);
+    const inbox = (await api('GET', '/songs')).find(isInbox);
+    await saveScratchTo(inbox);
   } catch (e) { toast(e.message); }
 });
+$('saveToSong').addEventListener('click', async () => {
+  if (!A.hasNotes()) return;
+  try {
+    const songs = (await api('GET', '/songs')).filter((x) => !isInbox(x));
+    if (!songs.length) return toast('No songs yet — create one on the songs screen');
+    const id = await menu({ title: 'Add this chord to', items: songs.map((x) => ({ label: x.name, hint: tuningLabel(x.tuning), value: x.id })) });
+    const target = songs.find((x) => x.id === id);
+    if (!target || !(await tuningOk(target, A.tuning))) return;
+    await saveScratchTo(target);
+  } catch (e) { toast(e.message); }
+});
+
+// ---- swipe on a chord: left = next, right = previous; from the left edge = back ----------
+// Only a quick, clearly horizontal stroke counts, so tapping and small slips never trigger it.
+{
+  const view = $('v-analyzer');
+  let sw = null;
+  view.addEventListener('touchstart', (e) => {
+    sw = null;
+    if (e.touches.length !== 1 || S.view !== 'analyzer' || sheetOpen() || $('dialog').classList.contains('open')) return;
+    if (e.target.closest('.songbar, .scratchbar, .side .bar, .a-bar, input')) return;
+    const t = e.touches[0];
+    sw = { x: t.clientX, y: t.clientY, t: performance.now(), edge: t.clientX < 28, dx: 0, dy: 0 };
+  }, { passive: true });
+  view.addEventListener('touchmove', (e) => {
+    if (!sw) return;
+    const t = e.touches[0];
+    sw.dx = t.clientX - sw.x;
+    sw.dy = t.clientY - sw.y;
+    if (Math.abs(sw.dy) > 36 && Math.abs(sw.dy) > Math.abs(sw.dx)) sw = null;   // vertical: not a swipe
+  }, { passive: true });
+  view.addEventListener('touchcancel', () => { sw = null; });
+  view.addEventListener('touchend', () => {
+    const s = sw;
+    sw = null;
+    if (!s) return;
+    const { dx, dy } = s;
+    if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.45 || performance.now() - s.t > 650) return;
+    blockClicksUntil = performance.now() + 450;    // the stroke must not also tap a fret
+    if (s.edge && dx > 0) return leaveAnalyzer();
+    if (S.ctx?.mode !== 'song') return;
+    const dir = dx < 0 ? 1 : -1;
+    step(dir, { create: false, onGo: () => slideIn(dir) });
+  });
+  let blockClicksUntil = 0;
+  view.addEventListener('click', (e) => {
+    if (performance.now() < blockClicksUntil) { e.stopPropagation(); e.preventDefault(); }
+  }, true);
+}
+// a short glide of the board and names in the direction of travel
+function slideIn(dir) {
+  for (const el of [$('board'), document.querySelector('#v-analyzer .side')]) {
+    el?.animate([{ transform: `translateX(${dir * 26}px)`, opacity: 0.35 }, { transform: 'none', opacity: 1 }], { duration: 190, easing: 'cubic-bezier(.25,.8,.3,1)', delay: 40 });
+  }
+}
 
 // press = step; hold = new chord or duplicate on that side (the menu opens on release,
 // so the lifting finger can't tap anything in it)
@@ -683,11 +741,12 @@ holdable($('nextChord'), 1);
 $('saveChord').addEventListener('click', () => saveChord());
 $('deleteChord').addEventListener('click', deleteChord);
 
-$('aBack').addEventListener('click', async () => {
+async function leaveAnalyzer() {
   if (S.ctx?.mode !== 'song') return up('#/');
   if (!(await guard())) return;
   up(`#/song/${S.ctx.songId}`);
-});
+}
+$('aBack').addEventListener('click', leaveAnalyzer);
 
 $('tuningBtn').addEventListener('click', () => {
   if (S.ctx?.mode === 'song') {

@@ -633,3 +633,23 @@ body.h .sheet { border-radius: var(--r-xl); }
 /* meta line and tuning chip start where the title's text starts */
 .song-head .page-meta { margin-left: 40px; }
 .tuning-chip { margin-left: 40px; max-width: calc(100% - 40px); }
+
+/* ---- bottom bar without a background; Save in the exact middle ---- */
+.songbar { display: grid; grid-template-columns: 48px 1fr minmax(150px, 1.5fr) 1fr 48px; align-items: center; gap: 8px; background: none; box-shadow: none; padding: 2px 0 0; border-radius: 0; }
+.songbar .pos { justify-self: center; }
+.songbar .icon-only { justify-self: center; }
+.songbar .save { width: 100%; }
+.songbar .nav { box-shadow: var(--edge); background: var(--panel); }
+body.h .songbar { max-width: 560px; }
+.scratchbar { display: grid; grid-template-columns: 1fr minmax(150px, auto) 1fr; align-items: center; gap: 10px; padding-top: 2px; }
+.scratchbar .save { min-width: 150px; }
+.to-song { justify-self: start; padding: 10px 12px; border-radius: var(--r-m); color: var(--dot-text); font-size: 14px; font-weight: 500; transition: background var(--fast) ease, opacity var(--fast) ease, transform 110ms var(--ease); }
+.to-song:hover:not(:disabled) { background: var(--panel); }
+.to-song:active:not(:disabled) { transform: scale(0.965); }
+.to-song:disabled { opacity: 0.35; }
+body.h .scratchbar { max-width: 560px; }
+.songbar { grid-template-columns: 48px minmax(0, 1fr) minmax(118px, 1.4fr) minmax(0, 1fr) 48px; gap: 6px; }
+.songbar .pos { min-width: 0; white-space: nowrap; }
+.scratchbar { grid-template-columns: minmax(0, 1fr) minmax(140px, auto) minmax(0, 1fr); }
+.to-song { white-space: nowrap; }
+body[data-view="analyzer"] .toast { bottom: calc(84px + env(safe-area-inset-bottom)); }
