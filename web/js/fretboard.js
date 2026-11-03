@@ -125,7 +125,7 @@ export class Fretboard {
     line(g.nut, cLo - 1, g.nut, cHi + 1, { class: 'nut' }, svg);
     // strings (heavier for the low ones)
     const strs = el('g', { class: 'strings' }, svg);
-    for (let s = 0; s < g.n; s++) line(g.nut, g.across(s), g.wire(g.N), g.across(s), { 'stroke-width': 1 + (g.n - 1 - s) * 0.22 }, strs);
+    for (let s = 0; s < g.n; s++) line(g.nut, g.across(s), g.wire(g.N), g.across(s), { 'stroke-width': 0.9 + (g.n - 1 - s) * 0.42 }, strs);
     // fret numbers
     const nums = el('g', { class: 'nums' }, svg);
     for (let f = 0; f <= g.N; f++) {

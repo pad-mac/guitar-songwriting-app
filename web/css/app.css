@@ -270,7 +270,7 @@ body.h .sheet-wrap.open .sheet { transform: translate(-50%, -50%); }
 .diagram .d-fret { stroke: var(--line); stroke-width: 1.2; }
 .diagram .d-top { stroke: #9d9d98; stroke-width: 1.4; }
 .diagram .d-nut { stroke: var(--nut); stroke-width: 4; stroke-linecap: round; }
-.diagram .d-string { stroke: var(--string); stroke-width: 1.1; }
+.diagram .d-string { stroke: var(--string); }
 .diagram .d-num { fill: var(--faint); font-size: 9px; text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
 .diagram .d-x { stroke: var(--x); stroke-width: 1.6; stroke-linecap: round; fill: none; }
 .diagram .d-open { fill: var(--dot-text); font-size: 10.5px; font-weight: 650; text-anchor: middle; dominant-baseline: central; }
@@ -398,3 +398,27 @@ body.dragging, body.dragging * { cursor: grabbing !important; }
 @media (max-width: 600px) {
   .dialog-wrap.as-menu { place-items: end center; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); }
 }
+
+/* ---- 0.3.1: controls live under the chord names; no big name above the board ---- */
+.a-top { padding-bottom: 4px; }
+.side { gap: 8px; }
+.cands li.hint { padding: 16px 12px; color: var(--faint); font-size: 15px; }
+.cands.empty { background: var(--panel); }
+.side .bar { flex: none; padding: 0; }
+body.v .side .bar { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+body.v .side .seg { grid-column: 1 / -1; display: flex; }
+body.v .side .seg button { flex: 1; padding: 8px 4px; }
+body.v .side .moves { display: contents; }
+body.v .side .move { grid-auto-flow: column; align-items: center; justify-content: center; gap: 2px; padding: 8px 4px; background: var(--panel); border-radius: 10px; font-size: 13px; }
+body.v .side .move svg { width: 18px; height: 18px; }
+body.v .side .clear { grid-column: 1 / -1; padding: 8px; background: var(--panel); border-radius: 10px; font-size: 13px; }
+body.h .side .bar { justify-content: flex-start; gap: 14px; padding-top: 2px; }
+
+/* bottom bar: one even row */
+.songbar { display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 16px; }
+.songbar .nav { width: 48px; height: 44px; flex: none; background: var(--panel-2); border-radius: 12px; }
+.songbar .nav:hover { background: #e2e2de; }
+.songbar .pos { flex: none; min-width: 58px; text-align: center; font-size: 13px; }
+.songbar .save { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border-radius: 12px; }
+.songbar .icon-only { flex: none; width: 44px; height: 44px; border-radius: 12px; }
+body.h .songbar { max-width: 520px; }

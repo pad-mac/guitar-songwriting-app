@@ -72,31 +72,30 @@
           <span id="tuningName" class="tname"></span>
         </button>
       </div>
-      <h1 id="current" class="current" aria-live="polite"></h1>
     </header>
 
     <main class="stage">
       <div id="board" class="board"></div>
       <aside class="side">
         <ol id="cands" class="cands" aria-label="Chord names"></ol>
+        <nav class="bar">
+          <div class="seg" role="group" aria-label="Show on the fretboard" title="Notes or intervals (I)">
+            <button type="button" data-display="notes">Notes</button>
+            <button type="button" data-display="intervals">Intervals</button>
+          </div>
+          <div class="moves">
+            <button id="lower" type="button" class="move lower" title="One fret lower (← ↑)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><span>Lower</span>
+            </button>
+            <button id="higher" type="button" class="move higher" title="One fret higher (→ ↓)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><span>Higher</span>
+            </button>
+          </div>
+          <button id="clear" type="button" class="clear" title="Clear (Backspace)">Clear</button>
+        </nav>
       </aside>
     </main>
 
-    <nav class="bar">
-      <div class="seg" role="group" aria-label="Show on the fretboard" title="Notes or intervals (I)">
-        <button type="button" data-display="notes">Notes</button>
-        <button type="button" data-display="intervals">Intervals</button>
-      </div>
-      <div class="moves">
-        <button id="lower" type="button" class="move lower" title="One fret lower (← ↑)">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><span>Lower</span>
-        </button>
-        <button id="higher" type="button" class="move higher" title="One fret higher (→ ↓)">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><span>Higher</span>
-        </button>
-      </div>
-      <button id="clear" type="button" class="clear" title="Clear (Backspace)">Clear</button>
-    </nav>
 
     <nav id="scratchbar" class="scratchbar" hidden>
       <button id="saveScratch" type="button" class="save" disabled title="Save this chord to Unsorted or a song">Save chord…</button>
@@ -106,11 +105,9 @@
       <button id="prevChord" type="button" class="nav prev" title="Previous chord ([) · hold to add a chord before this one">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
       </button>
-      <div class="songbar-mid">
-        <span id="chordPos" class="pos"></span>
-        <button id="saveChord" type="button" class="save" disabled title="Save to this chord (⌘S / Ctrl+S)">Save</button>
-        <button id="deleteChord" type="button" class="icon-only" aria-label="Delete this chord" title="Delete this chord"></button>
-      </div>
+      <span id="chordPos" class="pos"></span>
+      <button id="saveChord" type="button" class="save" disabled title="Save to this chord (⌘S / Ctrl+S)">Save</button>
+      <button id="deleteChord" type="button" class="icon-only" aria-label="Delete this chord" title="Delete this chord"></button>
       <button id="nextChord" type="button" class="nav next" title="Next chord (]) · hold to add a chord after this one">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
       </button>

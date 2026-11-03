@@ -41,7 +41,7 @@ export function chordDiagram(frets, tuningNotes, rootPc) {
   const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, class: 'diagram', 'aria-hidden': 'true' });
   for (let k = 1; k <= span; k++) el('line', { x1: padL, x2: W - padR, y1: y0 + k * ch, y2: y0 + k * ch, class: 'd-fret' }, svg);
   el('line', { x1: padL - (start === 1 ? 1.5 : 0), x2: W - padR + (start === 1 ? 1.5 : 0), y1: y0, y2: y0, class: start === 1 ? 'd-nut' : 'd-fret d-top' }, svg);
-  for (let s = 0; s < n; s++) el('line', { x1: xs(s), x2: xs(s), y1: y0, y2: y0 + span * ch, class: 'd-string' }, svg);
+  for (let s = 0; s < n; s++) el('line', { x1: xs(s), x2: xs(s), y1: y0, y2: y0 + span * ch, class: 'd-string', 'stroke-width': 0.8 + (n - 1 - s) * 0.26 }, svg);
   for (let k = 0; k < span; k++) {
     el('text', { x: 8, y: y0 + (k + 0.5) * ch, class: 'd-num' }, svg).textContent = start + k;
   }

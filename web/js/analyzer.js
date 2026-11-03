@@ -38,10 +38,6 @@ export function createAnalyzer({ onChange } = {}) {
     if (!sel) { sel = current[0] || null; st.pinned = false; }
     st.root = sel ? sel.root : null;
 
-    const head = $('current');
-    head.classList.toggle('long', !!sel && sel.text.length > 11 && sel.text.length <= 15);
-    head.classList.toggle('longer', !!sel && sel.text.length > 15);
-    head.replaceChildren(sel ? chordHTML(sel.parts) : h('span', { className: 'hint', textContent: 'Tap the fretboard' }));
 
     const iv = (n) => sel.labels[(pc(n) - sel.root + 12) % 12] || '';
     const showNotes = st.display === 'notes';
@@ -73,7 +69,7 @@ export function createAnalyzer({ onChange } = {}) {
       li.firstChild.title = `${c.text}${i < 9 ? `  (${i + 1})` : ''}`;
       return li;
     });
-    list.replaceChildren(...items);
+    list.replaceChildren(...(items.length ? items : [h('li', { className: 'hint', textContent: 'Tap the fretboard' })]));
     list.classList.toggle('empty', !items.length);
 
     const used = st.frets.filter((f) => f != null);
@@ -135,7 +131,7 @@ export function createAnalyzer({ onChange } = {}) {
 
   $('cands').addEventListener('click', (e) => {
     const li = e.target.closest('li');
-    if (li) api.pick(Number(li.dataset.root));
+    if (li && li.dataset.root != null) api.pick(Number(li.dataset.root));
   });
   for (const b of document.querySelectorAll('[data-display]')) b.addEventListener('click', () => api.setDisplay(b.dataset.display));
   $('lower').addEventListener('click', () => api.shift(-1));
