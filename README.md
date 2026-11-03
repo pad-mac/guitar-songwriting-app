@@ -6,6 +6,7 @@ Version 0.3: songs are saved on the server, behind a password.
 
 **Songs**
 - The first screen lists all songs with their created date and time and the first chord names. **Unsorted** sits on top: chords saved from the free analyzer without a song.
+- **Analyzer** (bottom left) opens the analyzer without a song. **Light/Dark** and **Right hand/Left hand** at the top are kept per device; left hand mirrors the fretboard and the chord cards.
 - The pencil renames a song. Hold a song (right-click on a computer) for Rename and Delete. + starts a new song.
 - A song shows its chords as cards, two per row on the phone: the name, and the shape cut down to the frets it uses, numbered on the left. Open and muted strings sit on a line above the cut-out, wherever on the neck it is.
 - **+ Section** adds a named separator (Verse, Chorus…). Tap its name to rename it.

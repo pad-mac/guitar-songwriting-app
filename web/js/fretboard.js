@@ -19,6 +19,7 @@ export class Fretboard {
     this.onTap = onTap;
     this.orientation = 'v';
     this.strings = 6;
+    this.mirror = false;
     this.data = null;
     this.size = [0, 0];
     this.svg = el('svg', { class: 'fb', role: 'application', 'aria-label': 'Fretboard' }, container);
@@ -31,10 +32,11 @@ export class Fretboard {
     this.svg.addEventListener('pointerleave', () => this.#hover(null));
   }
 
-  configure({ orientation, strings }) {
-    const changed = (orientation && orientation !== this.orientation) || (strings && strings !== this.strings);
+  configure({ orientation, strings, mirror }) {
+    const changed = (orientation && orientation !== this.orientation) || (strings && strings !== this.strings) || (mirror !== undefined && mirror !== this.mirror);
     if (orientation) this.orientation = orientation;
     if (strings) this.strings = strings;
+    if (mirror !== undefined) this.mirror = mirror;
     if (changed) this.#build();
   }
 
@@ -86,7 +88,9 @@ export class Fretboard {
     const along = (f) => (f === 0 ? nut - open / 2 : nut + (f - 0.5) * cell);
     const wire = (f) => nut + f * cell;
     const across = (s) => (v ? numLane + gap * (s + 0.5) : gap * (n - 1 - s + 0.5));
-    const xy = (a, c) => (v ? [c, a] : [a, c]);
+    // left-hand mode: everything mirrored left↔right (positions only, so text stays readable)
+    const m = !!this.mirror;
+    const xy = (a, c) => { const p = v ? [c, a] : [a, c]; if (m) p[0] = W - p[0]; return p; };
     const r = Math.max(9, Math.min(22, Math.min(cell, gap) * 0.42));
     return {
       v, n, N, cell, open, lab, nut, gap, numLane, r, along, wire, across, xy,
@@ -172,7 +176,8 @@ export class Fretboard {
     const g = this.g;
     if (!g) return null;
     const box = this.svg.getBoundingClientRect();
-    const x = e.clientX - box.left, y = e.clientY - box.top;
+    const x0 = e.clientX - box.left, y = e.clientY - box.top;
+    const x = this.mirror ? box.width - x0 : x0;
     const a = g.v ? y : x, c = g.v ? x : y;
     let f = null;
     if (a >= g.nut - g.open && a < g.nut) f = 0;

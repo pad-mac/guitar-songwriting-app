@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#e7e7e5">
+  <meta name="theme-color" content="#e7e7e5" id="themeColor">
   <meta name="color-scheme" content="light">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -13,6 +13,13 @@
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <link rel="stylesheet" href="css/app.css">
+  <script>
+    // theme and hand before the first paint, so nothing flashes
+    try {
+      if (localStorage.getItem('gsa:theme') === 'dark') document.documentElement.dataset.theme = 'dark';
+      if (localStorage.getItem('gsa:hand') === 'left') document.documentElement.classList.add('lefty-pending');
+    } catch (e) {}
+  </script>
   <title>Chords</title>
 </head>
 <body class="v">
@@ -33,10 +40,14 @@
   <section id="v-songs" class="view page" hidden>
     <header class="page-top">
       <h1 class="page-title">Songs</h1>
-      <button id="openScratch" type="button" class="ghost-btn">Analyzer</button>
+      <div class="page-tools">
+        <button id="themeToggle" type="button" class="pill" title="Light or dark"></button>
+        <button id="handToggle" type="button" class="pill" title="Right- or left-handed fretboard"></button>
+      </div>
     </header>
     <ul id="songList" class="song-list"></ul>
     <p id="songsEmpty" class="empty-note" hidden>No songs yet. Tap + to start one.</p>
+    <button id="openScratch" type="button" class="fab-left" title="The analyzer, without a song"></button>
     <button id="newSong" type="button" class="fab" aria-label="New song" title="New song"></button>
   </section>
 

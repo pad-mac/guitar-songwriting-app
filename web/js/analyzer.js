@@ -87,7 +87,7 @@ export function createAnalyzer({ onChange } = {}) {
     const o = w >= 700 && w >= hgt * 0.9 ? 'h' : 'v';
     document.body.classList.toggle('h', o === 'h');
     document.body.classList.toggle('v', o === 'v');
-    board.configure({ orientation: o, strings: st.tuning.notes.length });
+    board.configure({ orientation: o, strings: st.tuning.notes.length, mirror: document.body.classList.contains('lefty') });
   }
   window.addEventListener('resize', layout);
 

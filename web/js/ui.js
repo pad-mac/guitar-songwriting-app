@@ -113,9 +113,9 @@ export function menu({ title, items }) {
 // ---- inline rename ------------------------------------------------------------------------
 // Replaces `el`'s text with an input; Enter or leaving the field saves, Escape cancels.
 
-export function inlineEdit(el, value, onSave) {
+export function inlineEdit(el, value, onSave, { placeholder = '', onCancel } = {}) {
   if (el.querySelector('input')) return;
-  const input = h('input', { type: 'text', className: 'inline-input', value, maxLength: 120 });
+  const input = h('input', { type: 'text', className: 'inline-input', value, placeholder, maxLength: 120, enterKeyHint: 'done' });
   const old = [...el.childNodes];
   el.replaceChildren(input);
   input.focus();
@@ -127,6 +127,7 @@ export function inlineEdit(el, value, onSave) {
     const v = input.value.trim();
     el.replaceChildren(...old);
     if (save && v && v !== value) await onSave(v);
+    else onCancel?.(save);
   };
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); finish(true); }

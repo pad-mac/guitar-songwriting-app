@@ -27,7 +27,7 @@ export function windowOf(frets) {
   return { start: lo, span: Math.max(4, hi - lo + 1) };
 }
 
-export function chordDiagram(frets, tuningNotes, rootPc) {
+export function chordDiagram(frets, tuningNotes, rootPc, { mirror = false } = {}) {
   const n = tuningNotes.length;
   const { start, span } = windowOf(frets);
   const W = 150, padL = 29, padR = 12, top = 26, BH = 124;
@@ -35,15 +35,17 @@ export function chordDiagram(frets, tuningNotes, rootPc) {
   const ch = BH / span;
   const H = top + BH + 6;
   const r = Math.min(gx, ch) * 0.43;
-  const xs = (s) => padL + s * gx;
+  // left-hand mode: strings mirrored, fret numbers on the right
+  const left = mirror ? padR : padL, right = mirror ? W - padL : W - padR;
+  const xs = (s) => (mirror ? right - s * gx : left + s * gx);
   const y0 = top;
 
   const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, class: 'diagram', 'aria-hidden': 'true' });
-  for (let k = 1; k <= span; k++) el('line', { x1: padL, x2: W - padR, y1: y0 + k * ch, y2: y0 + k * ch, class: 'd-fret' }, svg);
-  el('line', { x1: padL - (start === 1 ? 1.5 : 0), x2: W - padR + (start === 1 ? 1.5 : 0), y1: y0, y2: y0, class: start === 1 ? 'd-nut' : 'd-fret d-top' }, svg);
+  for (let k = 1; k <= span; k++) el('line', { x1: left, x2: right, y1: y0 + k * ch, y2: y0 + k * ch, class: 'd-fret' }, svg);
+  el('line', { x1: left - (start === 1 ? 1.5 : 0), x2: right + (start === 1 ? 1.5 : 0), y1: y0, y2: y0, class: start === 1 ? 'd-nut' : 'd-fret d-top' }, svg);
   for (let s = 0; s < n; s++) el('line', { x1: xs(s), x2: xs(s), y1: y0, y2: y0 + span * ch, class: 'd-string', 'stroke-width': 0.8 + (n - 1 - s) * 0.26 }, svg);
   for (let k = 0; k < span; k++) {
-    el('text', { x: 8, y: y0 + (k + 0.5) * ch, class: 'd-num' }, svg).textContent = start + k;
+    el('text', { x: mirror ? W - 8 : 8, y: y0 + (k + 0.5) * ch, class: 'd-num' }, svg).textContent = start + k;
   }
 
   for (let s = 0; s < n; s++) {

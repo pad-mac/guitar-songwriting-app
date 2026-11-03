@@ -22,6 +22,7 @@ const S = {
   skipGuard: false,
   renameNext: false,
   pendingDraft: null,  // frets/root for the next new chord (duplicate)
+  creating: null,      // promise of a song being created
 };
 
 const A = createAnalyzer({ onChange: analyzerChanged });
@@ -31,6 +32,36 @@ $('aBack').append(svgIcon(ICON.back));
 $('newSong').append(svgIcon(ICON.plus));
 $('addChord').append(svgIcon(ICON.plus));
 $('deleteChord').append(svgIcon(ICON.trash));
+$('openScratch').append(svgIcon('M6 3.5h12v17H6zM10 3.5v17M14 3.5v17M6 8.5h12M6 13.5h12M12 11a1.4 1.4 0 1 0 0 0.01'), h('span', { textContent: 'Analyzer' }));
+
+// ---- this device's settings: light/dark, right/left hand --------------------------------
+const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } } };
+const MOON = 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z';
+const SUN = 'M12 7.5a4.5 4.5 0 1 1 0 9a4.5 4.5 0 1 1 0-9zM12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8';
+const HAND = 'M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4.5a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v7.5a6.5 6.5 0 0 1-6.5 6.5h-.5a6 6 0 0 1-5-2.7L3.6 14a1.5 1.5 0 0 1 2.4-1.8L8 14.5';
+function applySettings() {
+  const dark = store.get('gsa:theme') === 'dark';
+  const left = store.get('gsa:hand') === 'left';
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  $('themeColor').setAttribute('content', dark ? '#55575b' : '#e7e7e5');
+  document.body.classList.toggle('lefty', left);
+  document.documentElement.classList.remove('lefty-pending');
+  $('themeToggle').replaceChildren(svgIcon(dark ? MOON : SUN), h('span', { textContent: dark ? 'Dark' : 'Light' }));
+  $('themeToggle').title = dark ? 'Dark mode · tap for light' : 'Light mode · tap for dark';
+  const hand = svgIcon(HAND);
+  if (!left) hand.style.transform = 'scaleX(-1)';
+  $('handToggle').replaceChildren(hand, h('span', { textContent: left ? 'Left hand' : 'Right hand' }));
+  $('handToggle').title = left ? 'Fretboard mirrored for left-handed players · tap for right-handed' : 'Right-handed fretboard · tap for left-handed';
+  A.layout();
+}
+$('themeToggle').addEventListener('click', () => { store.set('gsa:theme', store.get('gsa:theme') === 'dark' ? 'light' : 'dark'); applySettings(); });
+$('handToggle').addEventListener('click', () => {
+  store.set('gsa:hand', store.get('gsa:hand') === 'left' ? 'right' : 'left');
+  applySettings();
+  if (S.view === 'songs') return;
+  if (S.view === 'song') renderSong();
+});
+const lefty = () => document.body.classList.contains('lefty');
 
 const sameNotes = (a, b) => !!a && !!b && a.notes.length === b.notes.length && a.notes.every((n, i) => n === b.notes[i]);
 const tuningLabel = (t) => t.name || t.notes.map(noteName).join(' ');
@@ -226,13 +257,24 @@ sortable($('songList'), {
   },
 });
 
-$('newSong').addEventListener('click', async () => {
-  try {
-    const { song } = await api('POST', '/songs', { name: 'New song', tuning: STANDARD });
-    S.renameNext = true;
-    navigate(`#/song/${song.id}`);
-  } catch (e) { toast(e.message); }
+$('newSong').addEventListener('click', () => {
+  // show the page and focus the title right inside the tap (iOS opens the keyboard only
+  // then); the song is created on the server meanwhile
+  S.song = { song: { id: null, kind: 'song', name: 'New song', tuning: STANDARD, created_at: Date.now() }, items: [] };
+  renderSong();
+  show('song');
+  S.creating = api('POST', '/songs', { name: 'New song', tuning: STANDARD }).then((res) => {
+    if (S.song?.song.id === null) {
+      S.song.song.id = res.song.id;
+      S.song.song.created_at = res.song.created_at;
+    }
+    history.pushState({ prev: '#/' }, '', `#/song/${res.song.id}`);
+    S.hash = location.hash;
+    return res.song.id;
+  }).catch((e) => { toast(e.message); navigate('#/', { replace: true }); throw e; });
+  renameSong();
 });
+const songId = async () => S.song.song.id ?? await S.creating;
 $('openScratch').addEventListener('click', () => navigate('#/analyzer'));
 
 // ---- one song -----------------------------------------------------------------------------
@@ -278,7 +320,7 @@ function cardEl(c, number) {
   if (sel && sel.text.length > 15) name.classList.add('longer');
   else if (sel && sel.text.length > 11) name.classList.add('long');
   const card = h('button', { type: 'button', className: 'chord-card', title: sel?.text || '' },
-    h('span', { className: 'card-num', textContent: number }), name, chordDiagram(c.frets, t.notes, sel?.root),
+    h('span', { className: 'card-num', textContent: number }), name, chordDiagram(c.frets, t.notes, sel?.root, { mirror: lefty() }),
     isInbox(S.song.song) && !sameNotes(t, STANDARD) ? h('span', { className: 'card-tuning', textContent: tuningLabel(t) }) : null);
   card.dataset.id = c.id;
   card._item = c;
@@ -305,22 +347,29 @@ function renameSong() {
   const { song } = S.song;
   if (isInbox(song)) return;
   inlineEdit($('songTitle'), song.name, async (v) => {
-    try { S.song = await api('PATCH', `/songs/${song.id}`, { name: v }); renderSong(); } catch (e) { toast(e.message); }
+    S.song.song.name = v;
+    $('songTitle').textContent = v;
+    try { S.song = await api('PATCH', `/songs/${await songId()}`, { name: v }); renderSong(); } catch (e) { toast(e.message); }
   });
 }
 $('songTitle').addEventListener('click', renameSong);
 $('songBack').addEventListener('click', () => up('#/'));
-$('addChord').addEventListener('click', () => navigate(`#/song/${S.song.song.id}/new/${S.song.items.length}`));
+$('addChord').addEventListener('click', async () => navigate(`#/song/${await songId()}/new/${S.song.items.length}`));
 
-$('addSection').addEventListener('click', async () => {
-  try {
-    const res = await api('POST', `/songs/${S.song.song.id}/items`, { kind: 'section', label: 'Section' });
-    S.song = { song: res.song, items: res.items };
+$('addSection').addEventListener('click', () => {
+  // the name field opens inside the tap (so the phone keyboard comes up); saved when done
+  const name = h('span', { className: 'section-name' });
+  const el = h('div', { className: 'section-item pending' }, name, h('span', { className: 'section-line' }));
+  $('chordGrid').append(el);
+  $('chordsEmpty').hidden = true;
+  inlineEdit(name, '', async (v) => {
+    try {
+      const res = await api('POST', `/songs/${await songId()}/items`, { kind: 'section', label: v });
+      S.song = { song: res.song, items: res.items };
+    } catch (e) { toast(e.message); }
     renderSong();
-    const el = $('chordGrid').querySelector(`[data-id="${res.itemId}"] .section-name`);
-    el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    if (el) renameSection(S.song.items.find((i) => i.id === res.itemId), el);
-  } catch (e) { toast(e.message); }
+  }, { placeholder: 'Section name', onCancel: () => { el.remove(); $('chordsEmpty').hidden = S.song.items.length > 0; } });
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
 });
 
 sortable($('chordGrid'), {
@@ -389,7 +438,7 @@ $('songTuning').addEventListener('click', () => {
     custom: S.custom,
     onCustomChange: saveCustom,
     async onPick(t) {
-      try { S.song = await api('PATCH', `/songs/${song.id}`, { tuning: t }); renderSong(); } catch (e) { toast(e.message); }
+      try { S.song = await api('PATCH', `/songs/${await songId()}`, { tuning: t }); renderSong(); } catch (e) { toast(e.message); }
     },
   });
 });
@@ -666,7 +715,8 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.target.closest('input, textarea')) return;
-  const k = e.key;
+  const flip = lefty() && document.body.classList.contains('h');
+  const k = flip && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') ? (e.key === 'ArrowLeft' ? 'ArrowRight' : 'ArrowLeft') : e.key;
   if (k === 'ArrowLeft' || k === 'ArrowUp') { e.preventDefault(); A.shift(-1); }
   else if (k === 'ArrowRight' || k === 'ArrowDown') { e.preventDefault(); A.shift(1); }
   else if (k === 'i' || k === 'n') A.toggleDisplay();
@@ -682,7 +732,7 @@ document.addEventListener('keydown', (e) => {
 // ---- start --------------------------------------------------------------------------------
 
 (async function boot() {
-  A.layout();
+  applySettings();
   try {
     const s = await api('GET', '/session');
     S.authed = s.authed;
