@@ -71,6 +71,37 @@ export class Fretboard {
     this.numEls.forEach((t, f) => t.classList.toggle('on', used.has(f)));
   }
 
+  /**
+   * Grey circles on every position whose pitch class is in `labels` (pc → text shown inside),
+   * for these open-string MIDI notes. Pass null (or an empty map) to clear.
+   */
+  setHints(tuningNotes, labels) {
+    const key = tuningNotes && labels?.size ? tuningNotes.join(',') + '|' + [...labels].map(([k, v]) => k + v).join(',') : '';
+    if (key === this.hintKey) return;
+    this.hintKey = key;
+    this.hints = key ? { tuning: tuningNotes, labels } : null;
+    this.#drawHints();
+  }
+
+  #drawHints() {
+    const layer = this.hintLayer, g = this.g;
+    if (!layer || !g) return;
+    layer.replaceChildren();
+    const h = this.hints;
+    if (!h || h.tuning.length !== g.n) return;
+    const r = g.r * 0.86;
+    for (let s = 0; s < g.n; s++) {
+      for (let f = 0; f <= g.N; f++) {
+        const label = h.labels.get((h.tuning[s] + f) % 12);
+        if (label == null) continue;
+        const [x, y] = g.xy(g.along(f), g.across(s));
+        const grp = el('g', { class: 'hint', style: `transform: translate(${x}px, ${y}px)` }, layer);
+        el('circle', { r }, grp);
+        el('text', { 'font-size': (label.length > 2 ? 0.66 : 0.8) * r }, grp).textContent = label;
+      }
+    }
+  }
+
   /** Show the name of every note on the board for these open-string MIDI notes, or nothing (null). */
   setAllNotes(tuningNotes) {
     const key = tuningNotes ? tuningNotes.join(',') : '';
@@ -196,6 +227,9 @@ export class Fretboard {
     // every note of the tuning, faint, under the dots (the "All notes" toggle)
     this.allLayer = el('g', { class: 'all-notes' }, svg);
     this.#drawAllNotes();
+    // suggested notes: grey circles wherever a picked chord function could be played
+    this.hintLayer = el('g', { class: 'hints' }, svg);
+    this.#drawHints();
     // hover ghost
     this.ghost = el('circle', { class: 'ghost', r: g.r, cx: 0, cy: 0 }, svg);
     // dots

@@ -701,3 +701,43 @@ body.v .side .clear { grid-column: auto; }
 .all-toggle[aria-pressed="true"] { background: var(--selected) !important; color: var(--text); box-shadow: var(--edge), inset 0 0 0 1.5px color-mix(in srgb, var(--dot) 55%, transparent); }
 body.h .all-toggle { margin-left: auto; }
 body.h .all-toggle + .clear { margin-left: 0; }
+
+/* ---- chord functions under the names: one row per chord tone, root on top ---- */
+body.v .cands { flex: none; max-height: 44%; }
+.iv-list { list-style: none; margin: 0; padding: 4px; background: var(--panel); border-radius: var(--r-l); box-shadow: var(--edge); min-height: 0; overflow: auto; scrollbar-width: none; }
+.iv-list::-webkit-scrollbar { display: none; }
+.iv-list.empty { display: none; }
+body.v .iv-list { flex: 1 1 auto; display: grid; grid-template-rows: repeat(7, minmax(34px, 1fr)); gap: 2px; }
+.iv-row { display: flex; gap: 2px; min-height: 0; }
+.iv-row + .iv-row { border-top: 1px solid var(--hair); padding-top: 2px; }
+.iv { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 9px; padding: 2px 1px; color: var(--faint); transition: background var(--fast) ease, color var(--fast) ease, transform 110ms var(--ease); }
+.iv:hover { background: var(--tint); }
+.iv:active { transform: scale(0.94); }
+.iv-fn { font-size: 13px; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; white-space: nowrap; }
+.iv-note { font-size: 10.5px; line-height: 1.1; opacity: 0.85; white-space: nowrap; }
+.iv.elsewhere { color: var(--muted); }
+.iv.has { color: #fff; background: var(--dot); box-shadow: 0 1px 3px rgba(229, 95, 0, 0.3); }
+.iv.has.root { background: var(--root); box-shadow: 0 1px 3px rgba(15, 154, 60, 0.3); }
+.iv.has .iv-note { opacity: 0.9; }
+.iv.on:not(.has) { background: var(--hint-fill); color: var(--text); box-shadow: inset 0 0 0 1.2px var(--hint-line); }
+.iv.on.has { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--hint-line); }
+/* wide screens: the chord tones side by side, each a column */
+body.h .iv-list { display: flex; gap: 4px; padding: 5px; }
+body.h .iv-row { flex-direction: column; flex: 1 1 0; }
+body.h .iv-row + .iv-row { border-top: 0; padding-top: 0; border-left: 1px solid var(--hair); padding-left: 4px; }
+body.h .iv { min-height: 34px; flex: none; }
+
+/* grey circles on the board where a picked function lies */
+:root { --hint-fill: rgba(60, 60, 56, 0.12); --hint-line: rgba(60, 60, 56, 0.34); --hint-text: #6f6f6a; }
+:root[data-theme="dark"] { --hint-fill: rgba(255, 255, 255, 0.13); --hint-line: rgba(255, 255, 255, 0.4); --hint-text: #e6e6e2; }
+.fb .hints { pointer-events: none; }
+.fb .hint { animation: hint-in 140ms cubic-bezier(.3, 1.4, .5, 1); transform-box: view-box; }
+.fb .hint circle { fill: var(--hint-fill); stroke: var(--hint-line); stroke-width: 1.2; stroke-dasharray: 3 2.2; }
+.fb .hint text { fill: var(--hint-text); text-anchor: middle; dominant-baseline: central; font-weight: 600; }
+@keyframes hint-in { from { opacity: 0; } }
+/* wide screens: compact cells (function and note on one line), slightly shorter board */
+body.h .stage { grid-template-rows: clamp(190px, 42vh, 380px) auto; }
+body.h .iv { flex-direction: row; gap: 6px; min-height: 26px; height: 26px; }
+body.h .iv-note { font-size: 11px; }
+body.h .iv-list { padding: 4px; }
+body.h .side { gap: 8px; }

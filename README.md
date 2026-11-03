@@ -26,6 +26,7 @@ Version 0.3: songs are saved on the server, behind a password.
 - **Names**: one name per sounding note taken as the root. The name on the bass note comes first, then the others from simplest to most involved. Tap a name to read the fretboard from that root.
 - **Notes / Intervals**: what the dots show. The row under the board shows the other.
 - **Lower / Higher**: moves the whole shape a fret down or up, open strings included.
+- **Chord functions** (under the names): the chord tones stacked in thirds with the root on top (root · 3rd · 5th · 7th · 9th · 11th · 13th), every possible function per row with the note it would be; the ones in the chord are lit. Tap one to see grey circles wherever that note lies on the board; tap again to hide them. A hint for a missing note goes away once you play it.
 - **All notes**: names every position on the board for the current tuning, in faint grey under the dots (key `A`). Remembered per device.
 - **Tunings**: 13 presets, plus your own (Copy a preset, or New tuning). Own tunings are stored on the server, so every device has them.
 - Keys: ← ↑ lower, → ↓ higher, `I` notes/intervals, `T` tunings, `1`–`9` pick a name, Backspace clears.
