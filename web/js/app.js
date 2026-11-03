@@ -21,6 +21,7 @@ const S = {
   scroll: {},
   skipGuard: false,
   renameNext: false,
+  pendingDraft: null,  // frets/root for the next new chord (duplicate)
 };
 
 const A = createAnalyzer({ onChange: analyzerChanged });
@@ -431,7 +432,9 @@ async function openDraft(songId, at) {
     tuning = near?.tuning || scratch || STANDARD;
   }
   S.ctx = { mode: 'song', songId, chordId: null, at: pos, base: null, loading: true, tuning };
-  A.load({ frets: null, root: null, tuning });
+  const copy = S.pendingDraft;
+  S.pendingDraft = null;
+  A.load({ frets: copy?.frets || null, root: copy?.root ?? null, tuning });
   S.ctx.loading = false;
   enterSongMode();
 }
@@ -493,7 +496,7 @@ function updateBars() {
   next.classList.toggle('no-hold', nav.draft);
   next.classList.toggle('add', addAtEnd);
   next.querySelector('path').setAttribute('d', addAtEnd ? ICON.plus : NEXT_PATH);
-  next.title = addAtEnd ? 'Add a chord at the end' : 'Next chord (]) · hold to add a chord after this one';
+  next.title = addAtEnd ? 'Add a chord at the end · hold for new or duplicate' : 'Next chord (]) · hold for a new chord or a duplicate after this one';
   const save = $('saveChord');
   if (!save.classList.contains('saved')) save.disabled = !(isDirty() && A.hasNotes());
   $('deleteChord').hidden = nav.draft;
@@ -527,11 +530,23 @@ async function step(dir) {
   goTo(target);
 }
 
-async function insert(dir) {
+async function insert(dir, { copy = false } = {}) {
   if (S.ctx?.mode !== 'song' || S.ctx.chordId == null) return;
   if (!(await guard())) return;
   const nav = chordNav();
+  // a duplicate starts from the chord as saved (after the guard: including what was just saved)
+  if (copy) S.pendingDraft = { frets: [...S.ctx.base.frets], root: S.ctx.base.root };
   goTo({ at: dir < 0 ? nav.p : nav.p + 1 });
+}
+
+// holding ‹ or › (or + on the last chord): a new, empty chord or a copy of this one
+async function holdAction(dir) {
+  if (S.ctx?.mode !== 'song' || S.ctx.chordId == null) return;
+  const v = await menu({
+    title: dir < 0 ? 'Before this chord' : 'After this chord',
+    items: [{ label: 'New chord', value: 'new' }, { label: 'Duplicate this chord', value: 'copy' }],
+  });
+  if (v) insert(dir, { copy: v === 'copy' });
 }
 
 async function saveChord() {
@@ -591,23 +606,23 @@ $('saveScratch').addEventListener('click', async () => {
   } catch (e) { toast(e.message); }
 });
 
-// press = step, hold = new chord on that side
+// press = step; hold = new chord or duplicate on that side (the menu opens on release,
+// so the lifting finger can't tap anything in it)
 function holdable(btn, dir) {
   let timer = null, held = false;
-  const cancel = () => { clearTimeout(timer); timer = null; btn.classList.remove('holding'); };
+  const reset = () => { clearTimeout(timer); timer = null; btn.classList.remove('holding'); };
   btn.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     held = false;
-    if (btn.classList.contains('no-hold') || btn.classList.contains('add')) return;
+    if (btn.classList.contains('no-hold')) return;
     btn.classList.add('holding');
-    timer = setTimeout(() => {
-      held = true;
-      btn.classList.remove('holding');
-      navigator.vibrate?.(12);
-      insert(dir);
-    }, 480);
+    timer = setTimeout(() => { held = true; navigator.vibrate?.(12); }, 480);
   });
-  for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) btn.addEventListener(ev, cancel);
+  btn.addEventListener('pointerup', () => {
+    reset();
+    if (held) holdAction(dir);
+  });
+  for (const ev of ['pointerleave', 'pointercancel']) btn.addEventListener(ev, () => { if (!held) reset(); });
   btn.addEventListener('click', (e) => {
     if (held) { held = false; e.preventDefault(); return; }
     step(dir);

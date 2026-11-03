@@ -14,7 +14,7 @@ Version 0.3: songs are saved on the server, behind a password.
 
 **Analyzer on a song**
 - ‹ and › go to the previous and next chord (sections are skipped). On the last chord, › becomes + for a new one at the end.
-- Hold ‹ or › (half a second, the line under the arrow fills) to put a new chord before or after the current one.
+- Hold ‹ or › (half a second, the line under the arrow fills), then let go: choose **New chord** or **Duplicate this chord**, before or after the current one. Holding the + on the last chord works the same way. A duplicate opens unsaved, so you can change it before saving.
 - Changes only reach the song with **Save**, which stays grey until something differs from the saved chord. Choosing another name counts as a change, and is what the card shows. Leaving with unsaved changes asks first.
 - The bin deletes the chord.
 - Keys: `[` `]` previous/next, `{` `}` new chord before/after, ⌘S / Ctrl+S saves.
