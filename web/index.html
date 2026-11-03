@@ -40,33 +40,39 @@
     <button id="newSong" type="button" class="fab" aria-label="New song" title="New song"></button>
   </section>
 
-  <!-- one song -->
+  <!-- one song (or the Unsorted folder) -->
   <section id="v-song" class="view page" hidden>
-    <header class="page-top">
-      <button id="songBack" type="button" class="ghost-btn back" aria-label="Songs"></button>
-      <div class="title-wrap">
-        <h1 id="songTitle" class="page-title editable" title="Rename"></h1>
-        <p id="songMeta" class="page-meta"></p>
+    <header class="song-head">
+      <div class="song-head-row">
+        <button id="songBack" type="button" class="ghost-btn back" aria-label="Songs"></button>
+        <h1 id="songTitle" class="song-title" title="Rename"></h1>
       </div>
-      <button id="songTuning" type="button" class="tuning-btn" title="Tuning for the whole song">
+      <p id="songMeta" class="page-meta"></p>
+      <button id="songTuning" type="button" class="tuning-chip" title="Tuning for the whole song">
         <span class="tn"></span><span class="tname"></span>
       </button>
     </header>
     <div id="chordGrid" class="chord-grid"></div>
-    <p id="chordsEmpty" class="empty-note" hidden>No chords yet. Tap + to add one.</p>
-    <div class="page-foot"><button id="deleteSong" type="button" class="danger">Delete song</button></div>
+    <p id="chordsEmpty" class="empty-note" hidden></p>
+    <div class="grid-foot">
+      <button id="addSection" type="button" class="add-section">+ Section</button>
+      <span class="grid-hint">Hold a card to move or delete it, or drag it to a new place.</span>
+    </div>
     <button id="addChord" type="button" class="fab" aria-label="Add a chord" title="Add a chord"></button>
   </section>
 
   <!-- analyzer -->
   <section id="v-analyzer" class="view analyzer" hidden>
-    <header class="top">
-      <button id="aBack" type="button" class="ghost-btn back" aria-label="Back"></button>
+    <header class="a-top">
+      <div class="a-bar">
+        <button id="aBack" type="button" class="ghost-btn back" aria-label="Back"></button>
+        <span id="aContext" class="a-context"></span>
+        <button id="tuningBtn" class="tuning-btn" type="button" title="Tuning (T)">
+          <span id="tuningNotes" class="tn"></span>
+          <span id="tuningName" class="tname"></span>
+        </button>
+      </div>
       <h1 id="current" class="current" aria-live="polite"></h1>
-      <button id="tuningBtn" class="tuning-btn" type="button" title="Tuning (T)">
-        <span id="tuningNotes" class="tn"></span>
-        <span id="tuningName" class="tname"></span>
-      </button>
     </header>
 
     <main class="stage">
@@ -90,6 +96,10 @@
         </button>
       </div>
       <button id="clear" type="button" class="clear" title="Clear (Backspace)">Clear</button>
+    </nav>
+
+    <nav id="scratchbar" class="scratchbar" hidden>
+      <button id="saveScratch" type="button" class="save" disabled title="Save this chord to Unsorted or a song">Save chord…</button>
     </nav>
 
     <nav id="songbar" class="songbar" hidden>

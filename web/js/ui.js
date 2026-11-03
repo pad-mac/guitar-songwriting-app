@@ -65,11 +65,48 @@ export function ask({ title, text = '', buttons }) {
       return el;
     }));
     box.replaceChildren(...[h('h3', { textContent: title }), text ? h('p', { textContent: text }) : null, row].filter(Boolean));
-    wrap.querySelector('.scrim').onclick = () => done(null);
+    const opened = performance.now();
+    wrap.querySelector('.scrim').onclick = () => { if (performance.now() - opened > 400) done(null); };
     document.addEventListener('keydown', onKey, true);
     wrap.classList.add('open');
     wrap.setAttribute('aria-hidden', 'false');
     row.lastChild?.focus({ preventScroll: true });
+  });
+}
+
+// ---- action menu --------------------------------------------------------------------------
+// menu({ title, items: [{ label, hint, value, kind }] }) → value of the picked item, or null
+
+export function menu({ title, items }) {
+  const wrap = $('dialog');
+  const box = wrap.querySelector('.dialog');
+  return new Promise((resolve) => {
+    const done = (v) => {
+      wrap.classList.remove('open', 'as-menu');
+      wrap.setAttribute('aria-hidden', 'true');
+      document.removeEventListener('keydown', onKey, true);
+      resolve(v);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(null); }
+    };
+    const list = h('div', { className: 'menu-items' }, items.map((it) => {
+      const b = h('button', { type: 'button', className: 'menu-item' + (it.kind ? ' ' + it.kind : '') },
+        h('span', { className: 'menu-label', textContent: it.label }),
+        it.hint ? h('span', { className: 'menu-hint', textContent: it.hint }) : null);
+      b.addEventListener('click', () => done(it.value));
+      return b;
+    }));
+    const cancel = h('button', { type: 'button', className: 'menu-item menu-cancel', textContent: 'Cancel' });
+    cancel.addEventListener('click', () => done(null));
+    box.replaceChildren(...[title ? h('h3', { textContent: title }) : null, list, cancel].filter(Boolean));
+    const opened = performance.now();
+    wrap.querySelector('.scrim').onclick = () => { if (performance.now() - opened > 400) done(null); };
+    list.style.pointerEvents = cancel.style.pointerEvents = 'none';     // no stray tap right after opening
+    setTimeout(() => { list.style.pointerEvents = cancel.style.pointerEvents = ''; }, 300);
+    document.addEventListener('keydown', onKey, true);
+    wrap.classList.add('open', 'as-menu');
+    wrap.setAttribute('aria-hidden', 'false');
   });
 }
 

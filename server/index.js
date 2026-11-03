@@ -131,36 +131,48 @@ app.post('/api/logout', (req, res) => {
 
 app.use('/api', (req, res, next) => (authed(req) ? next() : res.status(401).json({ error: 'Not signed in' })));
 
-// ---- songs and chords ---------------------------------------------------------------------
+// ---- songs, their chords and sections -----------------------------------------------------
+// A song holds an ordered list of items: chords and named sections. One song row is the
+// "Unsorted" folder (kind 'inbox'): chords saved without a song; each keeps its own tuning.
 
 const now = () => Date.now();
-const songOut = (s) => ({ id: s.id, name: s.name, tuning: JSON.parse(s.tuning), created_at: s.created_at, updated_at: s.updated_at });
-const chordOut = (c) => ({ id: c.id, pos: c.pos, frets: JSON.parse(c.frets), root: c.root });
-const chordsOf = (songId) => db.prepare('SELECT * FROM chords WHERE song_id = ? ORDER BY pos').all(songId).map(chordOut);
+const songOut = (s) => ({ id: s.id, kind: s.kind, name: s.name, tuning: JSON.parse(s.tuning), created_at: s.created_at, updated_at: s.updated_at });
+const itemOut = (c) => (c.kind === 'section'
+  ? { id: c.id, pos: c.pos, kind: 'section', label: c.label || '' }
+  : { id: c.id, pos: c.pos, kind: 'chord', frets: JSON.parse(c.frets), root: c.root, tuning: c.tuning ? JSON.parse(c.tuning) : null });
+const itemsOf = (songId) => db.prepare('SELECT * FROM chords WHERE song_id = ? ORDER BY pos, id').all(songId).map(itemOut);
+const songRow = (id) => db.prepare('SELECT * FROM songs WHERE id = ?').get(id);
 function songFull(id) {
-  const s = db.prepare('SELECT * FROM songs WHERE id = ?').get(id);
+  const s = songRow(id);
   if (!s) throw fail(404, 'Song not found');
-  return { song: songOut(s), chords: chordsOf(id) };
+  return { song: songOut(s), items: itemsOf(id) };
 }
+const itemRow = (id) => {
+  const c = db.prepare('SELECT * FROM chords WHERE id = ?').get(id);
+  if (!c) throw fail(404, 'Not found');
+  return c;
+};
 const touch = (id) => db.prepare('UPDATE songs SET updated_at = ? WHERE id = ?').run(now(), id);
 const renumber = (songId) => {
   const ids = db.prepare('SELECT id FROM chords WHERE song_id = ? ORDER BY pos, id').all(songId);
   const set = db.prepare('UPDATE chords SET pos = ? WHERE id = ?');
   ids.forEach((r, i) => set.run(i, r.id));
 };
+const countIn = (songId) => db.prepare('SELECT COUNT(*) AS n FROM chords WHERE song_id = ?').get(songId).n;
+function vLabel(v) { return String(v ?? '').trim().slice(0, 60); }
 
 app.get('/api/songs', (req, res) => {
-  const songs = db.prepare('SELECT * FROM songs ORDER BY created_at DESC, id DESC').all();
-  const count = db.prepare('SELECT COUNT(*) AS n FROM chords WHERE song_id = ?');
-  const first = db.prepare('SELECT * FROM chords WHERE song_id = ? ORDER BY pos LIMIT 8');
-  res.json(songs.map((s) => ({ ...songOut(s), chord_count: count.get(s.id).n, preview: first.all(s.id).map(chordOut) })));
+  const songs = db.prepare(`SELECT * FROM songs ORDER BY kind = 'inbox' DESC, created_at DESC, id DESC`).all();
+  const count = db.prepare(`SELECT COUNT(*) AS n FROM chords WHERE song_id = ? AND kind = 'chord'`);
+  const first = db.prepare(`SELECT * FROM chords WHERE song_id = ? AND kind = 'chord' ORDER BY pos LIMIT 8`);
+  res.json(songs.map((s) => ({ ...songOut(s), chord_count: count.get(s.id).n, preview: first.all(s.id).map(itemOut) })));
 });
 
 app.post('/api/songs', (req, res) => {
   const name = req.body?.name ? vName(req.body.name) : 'New song';
   const tuning = vTuning(req.body?.tuning);
   const t = now();
-  const { lastInsertRowid } = db.prepare('INSERT INTO songs (name, tuning, created_at, updated_at) VALUES (?, ?, ?, ?)').run(name, JSON.stringify(tuning), t, t);
+  const { lastInsertRowid } = db.prepare(`INSERT INTO songs (name, tuning, created_at, updated_at, kind) VALUES (?, ?, ?, ?, 'song')`).run(name, JSON.stringify(tuning), t, t);
   res.status(201).json(songFull(Number(lastInsertRowid)));
 });
 
@@ -168,58 +180,104 @@ app.get('/api/songs/:id', (req, res) => res.json(songFull(idOf(req.params.id))))
 
 app.patch('/api/songs/:id', (req, res) => {
   const id = idOf(req.params.id);
-  songFull(id);
+  const s = songFull(id).song;
   if (req.body?.name !== undefined) db.prepare('UPDATE songs SET name = ? WHERE id = ?').run(vName(req.body.name), id);
-  if (req.body?.tuning !== undefined) db.prepare('UPDATE songs SET tuning = ? WHERE id = ?').run(JSON.stringify(vTuning(req.body.tuning)), id);
+  if (req.body?.tuning !== undefined) {
+    if (s.kind === 'inbox') throw fail(400, 'Chords in Unsorted keep their own tunings');
+    db.prepare('UPDATE songs SET tuning = ? WHERE id = ?').run(JSON.stringify(vTuning(req.body.tuning)), id);
+  }
   touch(id);
   res.json(songFull(id));
 });
 
 app.delete('/api/songs/:id', (req, res) => {
   const id = idOf(req.params.id);
+  if (songFull(id).song.kind === 'inbox') throw fail(400, 'Unsorted cannot be deleted');
   db.prepare('DELETE FROM songs WHERE id = ?').run(id);
   res.json({ ok: true });
 });
 
-// new chord at `index` (0 = first); without index, at the end
-app.post('/api/songs/:id/chords', (req, res) => {
+// new chord or section at `index` (0 = first); without index, at the end
+app.post('/api/songs/:id/items', (req, res) => {
   const id = idOf(req.params.id);
-  songFull(id);
-  const frets = vFrets(req.body?.frets);
-  const rootPc = vRoot(req.body?.root);
+  const song = songFull(id).song;
+  const kind = req.body?.kind === 'section' ? 'section' : 'chord';
+  let frets = '[]', rootPc = null, label = null, tuning = null;
+  if (kind === 'chord') {
+    frets = JSON.stringify(vFrets(req.body?.frets));
+    rootPc = vRoot(req.body?.root);
+    if (song.kind === 'inbox') tuning = JSON.stringify(vTuning(req.body?.tuning));
+  } else {
+    label = vLabel(req.body?.label) || 'Section';
+  }
   const out = tx(() => {
-    const n = db.prepare('SELECT COUNT(*) AS n FROM chords WHERE song_id = ?').get(id).n;
+    const n = countIn(id);
     const raw = req.body?.index;
     const index = Number.isInteger(raw) ? Math.max(0, Math.min(n, raw)) : n;
     db.prepare('UPDATE chords SET pos = pos + 1 WHERE song_id = ? AND pos >= ?').run(id, index);
     const t = now();
-    const { lastInsertRowid } = db.prepare('INSERT INTO chords (song_id, pos, frets, root, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)')
-      .run(id, index, JSON.stringify(frets), rootPc, t, t);
+    const { lastInsertRowid } = db.prepare('INSERT INTO chords (song_id, pos, kind, frets, root, label, tuning, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(id, index, kind, frets, rootPc, label, tuning, t, t);
     touch(id);
-    return { ...songFull(id), chordId: Number(lastInsertRowid) };
+    return { ...songFull(id), itemId: Number(lastInsertRowid) };
   });
   res.status(201).json(out);
 });
 
-app.patch('/api/chords/:id', (req, res) => {
+app.patch('/api/items/:id', (req, res) => {
   const id = idOf(req.params.id);
-  const c = db.prepare('SELECT * FROM chords WHERE id = ?').get(id);
-  if (!c) throw fail(404, 'Chord not found');
-  const frets = req.body?.frets !== undefined ? JSON.stringify(vFrets(req.body.frets)) : c.frets;
-  const rootPc = req.body?.root !== undefined ? vRoot(req.body.root) : c.root;
-  db.prepare('UPDATE chords SET frets = ?, root = ?, updated_at = ? WHERE id = ?').run(frets, rootPc, now(), id);
+  const c = itemRow(id);
+  if (c.kind === 'section') {
+    db.prepare('UPDATE chords SET label = ?, updated_at = ? WHERE id = ?').run(vLabel(req.body?.label) || 'Section', now(), id);
+  } else {
+    const frets = req.body?.frets !== undefined ? JSON.stringify(vFrets(req.body.frets)) : c.frets;
+    const rootPc = req.body?.root !== undefined ? vRoot(req.body.root) : c.root;
+    db.prepare('UPDATE chords SET frets = ?, root = ?, updated_at = ? WHERE id = ?').run(frets, rootPc, now(), id);
+  }
   touch(c.song_id);
-  res.json({ ...songFull(c.song_id), chordId: id });
+  res.json({ ...songFull(c.song_id), itemId: id });
 });
 
-app.delete('/api/chords/:id', (req, res) => {
-  const id = idOf(req.params.id);
-  const c = db.prepare('SELECT * FROM chords WHERE id = ?').get(id);
-  if (!c) throw fail(404, 'Chord not found');
+app.delete('/api/items/:id', (req, res) => {
+  const c = itemRow(idOf(req.params.id));
   tx(() => {
-    db.prepare('DELETE FROM chords WHERE id = ?').run(id);
+    db.prepare('DELETE FROM chords WHERE id = ?').run(c.id);
     renumber(c.song_id);
     touch(c.song_id);
+  });
+  res.json(songFull(c.song_id));
+});
+
+// the whole order at once: ids = every item of the song, in the new order
+app.put('/api/songs/:id/order', (req, res) => {
+  const id = idOf(req.params.id);
+  songFull(id);
+  const ids = req.body?.ids;
+  const have = db.prepare('SELECT id FROM chords WHERE song_id = ?').all(id).map((r) => r.id);
+  if (!Array.isArray(ids) || ids.length !== have.length || new Set(ids).size !== ids.length || !ids.every((x) => have.includes(x))) throw bad('order');
+  tx(() => {
+    const set = db.prepare('UPDATE chords SET pos = ? WHERE id = ?');
+    ids.forEach((itemId, i) => set.run(i, itemId));
+    touch(id);
+  });
+  res.json(songFull(id));
+});
+
+// move a chord to the end of another song (or Unsorted); the shape (frets) stays
+app.post('/api/items/:id/move', (req, res) => {
+  const c = itemRow(idOf(req.params.id));
+  if (c.kind !== 'chord') throw bad('item');
+  const to = idOf(req.body?.songId);
+  const target = songFull(to).song;
+  const from = songOut(songRow(c.song_id));
+  if (to === c.song_id) return res.json(songFull(to));
+  // into Unsorted: keep the tuning it had, so the notes stay the same
+  const tuning = target.kind === 'inbox' ? (c.tuning || JSON.stringify(from.tuning)) : null;
+  tx(() => {
+    db.prepare('UPDATE chords SET song_id = ?, pos = ?, tuning = ?, updated_at = ? WHERE id = ?').run(to, countIn(to), tuning, now(), c.id);
+    renumber(c.song_id);
+    touch(c.song_id);
+    touch(to);
   });
   res.json(songFull(c.song_id));
 });

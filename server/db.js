@@ -34,6 +34,24 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS chords_by_song ON chords (song_id, pos);
 `);
 
+// ---- schema upgrades (each runs once; existing rows keep their data) ----------------------
+const columns = (table) => db.prepare(`PRAGMA table_info(${table})`).all().map((c) => c.name);
+// 0.3: the chords table holds both chords and named sections; chords in the Unsorted
+// folder carry their own tuning; one song row is the Unsorted folder itself.
+if (!columns('chords').includes('kind')) {
+  db.exec(`
+    ALTER TABLE chords ADD COLUMN kind TEXT NOT NULL DEFAULT 'chord';
+    ALTER TABLE chords ADD COLUMN label TEXT;
+    ALTER TABLE chords ADD COLUMN tuning TEXT;
+  `);
+}
+if (!columns('songs').includes('kind')) db.exec(`ALTER TABLE songs ADD COLUMN kind TEXT NOT NULL DEFAULT 'song';`);
+if (!db.prepare(`SELECT 1 FROM songs WHERE kind = 'inbox'`).get()) {
+  const t = Date.now();
+  db.prepare(`INSERT INTO songs (name, tuning, created_at, updated_at, kind) VALUES (?, ?, ?, ?, 'inbox')`)
+    .run('Unsorted', JSON.stringify({ name: 'Standard', notes: [40, 45, 50, 55, 59, 64] }), t, t);
+}
+
 export function getSetting(key) {
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
   return row ? row.value : null;

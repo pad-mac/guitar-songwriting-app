@@ -2,22 +2,25 @@
 
 A lean guitar chord songwriting app. Pick notes on the fretboard and get the chord names.
 
-Version 0.2: songs are saved on the server, behind a password.
+Version 0.3: songs are saved on the server, behind a password.
 
 **Songs**
-- The first screen lists all songs with their created date and time and the first chord names. The pencil renames a song; + starts a new one.
+- The first screen lists all songs with their created date and time and the first chord names. **Unsorted** sits on top: chords saved from the free analyzer without a song.
+- The pencil renames a song. Hold a song (right-click on a computer) for Rename and Delete. + starts a new song.
 - A song shows its chords as cards, two per row on the phone: the name, and the shape cut down to the frets it uses, numbered on the left. Open and muted strings sit on a line above the cut-out, wherever on the neck it is.
-- The tuning button on a song changes the tuning for all its chords. + adds a chord at the end. "Delete song" is at the bottom.
-- Tap a card to open it in the analyzer.
+- **+ Section** adds a named separator (Verse, Chorus…). Tap its name to rename it.
+- Drag cards and sections to reorder them. On the phone: hold until the card lifts, then move it. Holding without moving opens a menu: move the chord to another song or to Unsorted, or delete it. On a computer: drag with the mouse, right-click for the menu.
+- The tuning under the title changes the tuning for all chords of the song. Chords in Unsorted keep the tuning they were saved with.
 
 **Analyzer on a song**
-- ‹ and › go to the previous and next chord. On the last chord, › becomes + for a new one at the end.
+- ‹ and › go to the previous and next chord (sections are skipped). On the last chord, › becomes + for a new one at the end.
 - Hold ‹ or › (half a second, the line under the arrow fills) to put a new chord before or after the current one.
 - Changes only reach the song with **Save**, which stays grey until something differs from the saved chord. Choosing another name counts as a change, and is what the card shows. Leaving with unsaved changes asks first.
 - The bin deletes the chord.
 - Keys: `[` `]` previous/next, `{` `}` new chord before/after, ⌘S / Ctrl+S saves.
 
-**Analyzer on its own** ("Analyzer" on the songs screen), as in 0.1:
+**Analyzer on its own** ("Analyzer" on the songs screen):
+- **Save chord…** puts the chord into Unsorted, or at the end of a song. If that song is in another tuning, it asks first: the shape is saved as it is, so its notes follow the song's tuning.
 - **Fretboard**: tap a fret to place a note, tap it again to mute the string. The row above the nut is for open strings.
 - **Names**: one name per sounding note taken as the root. The name on the bass note comes first, then the others from simplest to most involved. Tap a name to read the fretboard from that root.
 - **Notes / Intervals**: what the dots show. The row under the board shows the other.

@@ -41,7 +41,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--dot); outli
   height: 100dvh;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   grid-auto-rows: auto;
+  width: 100%;
+  overflow: hidden;
   padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   gap: 10px;
   margin: 0 auto;
@@ -56,11 +59,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--dot); outli
 /* ---- header ---- */
 .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 64px; }
 .top .back { margin-left: -8px; align-self: center; }
-.current { margin: 0; flex: 1; font-weight: 400; font-size: 40px; line-height: 1; padding-top: 0.3em; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.current { margin: 0; font-weight: 400; font-size: 38px; line-height: 1; padding: 0.28em 0 0.04em; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .current .hint { font-size: 18px; color: var(--faint); }
 .tuning-btn { display: grid; justify-items: center; gap: 4px; padding: 8px 12px; border-radius: 12px; transition: background var(--fast) ease; flex: none; }
 .tuning-btn:hover { background: var(--panel); }
-.tn { font-weight: 700; letter-spacing: 0.22em; font-size: 19px; color: #3d3d3a; margin-right: -0.22em; white-space: nowrap; }
+.tn { font-weight: 700; letter-spacing: 0.06em; word-spacing: 0.1em; font-size: 17px; color: #3d3d3a; margin-right: -0.06em; white-space: nowrap; }
 .tname { font-size: 13px; color: var(--muted); }
 
 /* ---- stage ---- */
@@ -71,7 +74,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--dot); outli
 body.v .stage { grid-template-columns: minmax(0, 58fr) minmax(0, 42fr); }
 body.h .analyzer { max-width: 1320px; grid-template-rows: auto auto auto; align-content: start; gap: 14px; }
 body.h .stage { grid-template-rows: clamp(190px, 48vh, 400px) auto; }
-body.h .current { font-size: 46px; }
+body.h .current { font-size: 44px; }
 @media (max-height: 480px) {
   body.h .analyzer { gap: 6px; padding-top: max(6px, env(safe-area-inset-top)); }
   body.h .top { min-height: 48px; }
@@ -124,8 +127,8 @@ body.h .cands button { width: auto; padding: 16px 16px 10px; font-size: 27px; }
 
 /* ---- bottom bar ---- */
 .bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 2px; }
-.seg { display: inline-flex; background: var(--panel); border-radius: 11px; padding: 3px; }
-.seg button { padding: 9px 13px; border-radius: 8px; font-size: 15px; color: var(--muted); transition: background var(--fast) ease, color var(--fast) ease; }
+.seg { display: inline-flex; background: var(--panel); border-radius: 9px; padding: 2px; flex: none; }
+.seg button { padding: 6px 9px; border-radius: 7px; font-size: 13px; color: var(--muted); transition: background var(--fast) ease, color var(--fast) ease; }
 .seg button[aria-pressed="true"] { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
 .moves { display: flex; gap: 4px; }
 .move { display: grid; justify-items: center; gap: 2px; padding: 4px 10px; border-radius: 10px; font-size: 12px; color: #3d3d3a; transition: background var(--fast) ease, opacity var(--fast) ease; }
@@ -292,9 +295,6 @@ body.h .sheet-wrap.open .sheet { transform: translate(-50%, -50%); }
 .save:disabled { background: #dcdcd8; color: #9a9a95; }
 .save.saved { background: var(--root); color: #fff; }
 .songbar .icon-only { margin: 0; width: 40px; height: 40px; }
-body.song-mode.v .current { font-size: 34px; }
-body.song-mode.v .current.long { font-size: 27px; }
-body.song-mode.v .current.longer { font-size: 22px; }
 body.h .songbar { max-width: 560px; justify-self: start; width: 100%; }
 
 /* ---- sign in ---- */
@@ -327,3 +327,74 @@ body.h .songbar { max-width: 560px; justify-self: start; width: 100%; }
 /* views fade in */
 .view { animation: view-in 140ms ease; }
 @keyframes view-in { from { opacity: 0; } }
+
+/* ---- analyzer header: a small bar (back, song, tuning), the chord name on its own line ---- */
+.a-top { min-width: 0; }
+.a-bar { display: flex; align-items: center; gap: 4px; min-width: 0; min-height: 44px; }
+.a-bar .back { margin-left: -8px; }
+.a-context { flex: 1; min-width: 0; font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a-bar .tuning-btn { padding: 5px 8px; gap: 1px; }
+.a-bar .tuning-btn .tn { font-size: 14px; }
+.a-bar .tuning-btn .tname { font-size: 11px; }
+body.song-mode .a-bar .tuning-btn { cursor: default; }
+body.song-mode .a-bar .tuning-btn:hover { background: none; }
+.bar { gap: 6px; }
+.bar .clear { padding: 8px 10px; }
+.scratchbar { display: flex; justify-content: center; padding: 2px 0 0; }
+.scratchbar .save { min-width: 180px; }
+body.h .scratchbar { justify-content: flex-start; }
+
+/* ---- song page header: title row, then meta, then the tuning on its own row ---- */
+.song-head { display: grid; gap: 6px; margin-bottom: 16px; }
+.song-head-row { display: flex; align-items: center; gap: 4px; min-height: 48px; }
+.song-head-row .back { margin-left: -8px; }
+.song-title { margin: 0; font-size: 24px; font-weight: 650; letter-spacing: -0.01em; line-height: 1.2; overflow-wrap: anywhere; min-width: 0; padding: 2px 4px; border-radius: 8px; }
+.song-title.editable { cursor: text; transition: background var(--fast) ease; }
+.song-title.editable:hover { background: rgba(0, 0, 0, 0.04); }
+.song-head .page-meta { margin: 0 0 4px 36px; }
+.tuning-chip { justify-self: start; display: inline-flex; align-items: baseline; gap: 10px; margin-left: 32px; padding: 7px 12px; border-radius: 10px; background: var(--panel); transition: background var(--fast) ease; max-width: calc(100% - 32px); }
+.tuning-chip:hover { background: #fbfbfa; }
+.tuning-chip .tn { font-size: 15px; }
+.tuning-chip .tname { font-size: 13px; }
+
+/* ---- songs list: the Unsorted folder ---- */
+.song-name-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.song-name-row .tray { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--dot-text); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.inbox-row { grid-template-columns: 1fr; background: #f1f1ee; border: 1.5px dashed #d2d2cd; }
+.inbox-row:hover { background: #f5f5f2; }
+.song-row { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.song-row.lifted { transform: scale(1.02); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); }
+
+/* ---- sections in the chord grid ---- */
+.section-item { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; padding: 14px 4px 2px; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; border-radius: 10px; transition: background var(--fast) ease, transform 140ms var(--ease); }
+.section-name { font-size: 15px; font-weight: 650; letter-spacing: 0.02em; text-transform: uppercase; color: #4a4a46; cursor: text; padding: 2px 4px; border-radius: 6px; white-space: nowrap; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
+.section-name:hover { background: rgba(0, 0, 0, 0.05); }
+.section-name .inline-input { text-transform: none; font-weight: 600; min-width: 160px; }
+.section-line { flex: 1; height: 1.5px; background: #cfcfca; border-radius: 1px; }
+.grid-foot { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 20px; }
+.add-section { padding: 9px 16px; border-radius: 10px; border: 1.5px dashed var(--line); color: var(--muted); font-size: 14px; transition: color var(--fast) ease, border-color var(--fast) ease; }
+.add-section:hover { color: var(--text); border-color: var(--muted); }
+.grid-hint { font-size: 12px; color: var(--faint); text-align: center; }
+.card-tuning { font-size: 11px; color: var(--muted); text-align: center; margin-top: 2px; }
+
+/* ---- drag and drop ---- */
+.chord-grid { position: relative; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.chord-card.lifted, .section-item.lifted { transform: scale(1.04); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14); z-index: 2; }
+.drag-placeholder { opacity: 0.25; }
+.drag-ghost { position: fixed !important; z-index: 50; pointer-events: none; margin: 0 !important; transform: scale(1.04) rotate(-1deg); box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2); opacity: 0.96; transition: none !important; }
+.drag-ghost.section-item { background: var(--panel); padding: 10px 12px; }
+body.dragging, body.dragging * { cursor: grabbing !important; }
+
+/* ---- action menu (in the dialog box) ---- */
+.dialog-wrap.as-menu .dialog { padding: 8px; width: min(400px, 100%); }
+.dialog-wrap.as-menu h3 { padding: 10px 12px 6px; margin: 0; font-size: 14px; font-weight: 600; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-items { display: grid; gap: 2px; max-height: min(60vh, 520px); overflow: auto; }
+.menu-item { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; width: 100%; text-align: left; padding: 13px 12px; border-radius: 11px; font-size: 16px; transition: background var(--fast) ease; }
+.menu-item:hover { background: var(--panel-2); }
+.menu-item.danger { color: #d6332a; }
+.menu-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-hint { flex: none; font-size: 13px; color: var(--muted); }
+.menu-cancel { justify-content: center; color: var(--muted); margin-top: 4px; border-top: 1px solid var(--hair); border-radius: 0 0 11px 11px; }
+@media (max-width: 600px) {
+  .dialog-wrap.as-menu { place-items: end center; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); }
+}

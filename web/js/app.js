@@ -4,7 +4,8 @@ import { PRESETS } from './tunings.js';
 import { noteName } from './chords.js';
 import { chordDiagram, chosenName } from './chordcard.js';
 import { openTuningSheet, sheetOpen, closeSheet } from './tuningsheet.js';
-import { $, h, svgIcon, ICON, chordHTML, formatDate, toast, ask, inlineEdit } from './ui.js';
+import { sortable } from './sortable.js';
+import { $, h, svgIcon, ICON, chordHTML, formatDate, toast, ask, menu, inlineEdit } from './ui.js';
 
 const STANDARD = { name: PRESETS[0].name, notes: [...PRESETS[0].notes] };
 const SCRATCH_KEY = 'gsa:scratch';
@@ -13,8 +14,8 @@ const S = {
   authed: false,
   setup: false,
   custom: [],          // own tunings (server)
-  song: null,          // { song, chords } of the open song
-  ctx: null,           // analyzer: { mode: 'scratch' } | { mode: 'song', songId, chordId|null, index, base }
+  song: null,          // { song, items } of the open song; items = chords and sections, in order
+  ctx: null,           // analyzer: { mode: 'scratch' } | { mode: 'song', songId, chordId|null, at, base }
   view: null,
   hash: '',
   scroll: {},
@@ -30,12 +31,17 @@ $('newSong').append(svgIcon(ICON.plus));
 $('addChord').append(svgIcon(ICON.plus));
 $('deleteChord').append(svgIcon(ICON.trash));
 
+const sameNotes = (a, b) => !!a && !!b && a.notes.length === b.notes.length && a.notes.every((n, i) => n === b.notes[i]);
+const tuningLabel = (t) => t.name || t.notes.map(noteName).join(' ');
+const isInbox = (song) => song?.kind === 'inbox';
+const countText = (n) => `${n} chord${n === 1 ? '' : 's'}`;
+
 // ---- views and routes ---------------------------------------------------------------------
 // #/                       songs
 // #/analyzer               free analyzer (not tied to a song)
-// #/song/ID                one song
+// #/song/ID                one song (or Unsorted)
 // #/song/ID/chord/CID      a saved chord in the analyzer
-// #/song/ID/new/INDEX      a new chord that will go in at INDEX
+// #/song/ID/new/AT         a new chord that will go in at position AT of the song's list
 
 function show(name) {
   if (S.view === 'songs' || S.view === 'song') S.scroll[S.view] = window.scrollY;
@@ -159,32 +165,65 @@ const saveCustom = async (list) => {
   try { S.custom = await api('PUT', '/tunings', list); } catch (e) { toast(e.message); }
 };
 
-// ---- songs --------------------------------------------------------------------------------
+// ---- songs list ---------------------------------------------------------------------------
 
-const countText = (n) => `${n} chord${n === 1 ? '' : 's'}`;
+const TRAY = 'M4 13h4l1.5 2.5h5L16 13h4M4 13l2.2-7h11.6L20 13v5H4v-5z';
 
 async function showSongs() {
   const songs = await api('GET', '/songs');
   const list = $('songList');
   list.replaceChildren(...songs.map((s) => {
+    const inbox = isInbox(s);
     const name = h('span', { className: 'song-name', textContent: s.name });
-    const preview = s.preview.map((c) => chosenName(c.frets, s.tuning.notes, c.root)?.text).filter(Boolean);
+    const preview = s.preview.map((c) => chosenName(c.frets, (inbox ? c.tuning : s.tuning)?.notes || STANDARD.notes, c.root)?.text).filter(Boolean);
+    const meta = inbox
+      ? `${countText(s.chord_count)} saved without a song`
+      : `${formatDate(s.created_at)} · ${countText(s.chord_count)}`;
     const main = h('div', { className: 'song-main', tabIndex: 0, role: 'link' },
-      name,
-      h('span', { className: 'song-meta', textContent: `${formatDate(s.created_at)} · ${countText(s.chord_count)}` }),
+      inbox ? h('span', { className: 'song-name-row' }, svgIcon(TRAY, 'tray'), name) : name,
+      h('span', { className: 'song-meta', textContent: meta }),
       preview.length ? h('span', { className: 'song-preview', textContent: preview.join('  ·  ') + (s.chord_count > preview.length ? '  ·  …' : '') }) : null);
     const openIt = (e) => { if (!e.target.closest('input')) navigate(`#/song/${s.id}`); };
     main.addEventListener('click', openIt);
     main.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target === main) openIt(e); });
-    const rename = h('button', { type: 'button', className: 'icon-only', ariaLabel: 'Rename', title: 'Rename' }, svgIcon(ICON.pencil));
-    rename.addEventListener('click', () => inlineEdit(name, s.name, async (v) => {
-      try { await api('PATCH', `/songs/${s.id}`, { name: v }); s.name = v; name.textContent = v; } catch (e) { toast(e.message); }
-    }));
-    return h('li', { className: 'song-row' }, main, rename);
+    const row = h('li', { className: 'song-row' + (inbox ? ' inbox-row' : '') }, main);
+    if (!inbox) {
+      row.dataset.id = s.id;
+      const rename = h('button', { type: 'button', className: 'icon-only', ariaLabel: 'Rename', title: 'Rename' }, svgIcon(ICON.pencil));
+      rename.addEventListener('click', () => renameInList(s, name));
+      row.append(rename);
+      row._song = s;
+      row._name = name;
+    }
+    return row;
   }));
-  $('songsEmpty').hidden = songs.length > 0;
+  $('songsEmpty').hidden = songs.length > 1;
   show('songs');
 }
+
+function renameInList(s, nameEl) {
+  inlineEdit(nameEl, s.name, async (v) => {
+    try { await api('PATCH', `/songs/${s.id}`, { name: v }); s.name = v; nameEl.textContent = v; } catch (e) { toast(e.message); }
+  });
+}
+
+sortable($('songList'), {
+  items: '.song-row[data-id]',
+  async onMenu(row) {
+    const s = row._song;
+    const v = await menu({ title: s.name, items: [{ label: 'Rename', value: 'rename' }, { label: 'Delete song', value: 'delete', kind: 'danger' }] });
+    if (v === 'rename') renameInList(s, row._name);
+    if (v === 'delete') {
+      const ok = await ask({
+        title: `Delete “${s.name}”?`,
+        text: s.chord_count ? `Its ${countText(s.chord_count)} go with it. This can't be undone.` : "This can't be undone.",
+        buttons: [{ label: 'Cancel', value: false }, { label: 'Delete', value: true, kind: 'danger-fill' }],
+      });
+      if (!ok) return;
+      try { await api('DELETE', `/songs/${s.id}`); showSongs(); } catch (e) { toast(e.message); }
+    }
+  },
+});
 
 $('newSong').addEventListener('click', async () => {
   try {
@@ -201,6 +240,8 @@ async function loadSong(id, { fresh = false } = {}) {
   if (fresh || !S.song || S.song.song.id !== id) S.song = await api('GET', `/songs/${id}`);
   return S.song;
 }
+const chordsOf = () => S.song.items.filter((i) => i.kind === 'chord');
+const tuningOf = (item) => (isInbox(S.song.song) ? item?.tuning : S.song.song.tuning) || STANDARD;
 
 async function showSong(id) {
   await loadSong(id, { fresh: true });
@@ -210,35 +251,135 @@ async function showSong(id) {
 }
 
 function renderSong() {
-  const { song, chords } = S.song;
+  const { song, items } = S.song;
+  const inbox = isInbox(song);
+  const n = items.filter((i) => i.kind === 'chord').length;
   $('songTitle').textContent = song.name;
-  $('songMeta').textContent = `Created ${formatDate(song.created_at)} · ${countText(chords.length)}`;
+  $('songTitle').classList.toggle('editable', !inbox);
+  $('songMeta').textContent = inbox
+    ? `${countText(n)} saved from the analyzer · each keeps its own tuning`
+    : `Created ${formatDate(song.created_at)} · ${countText(n)}`;
   const tb = $('songTuning');
+  tb.hidden = inbox;
   tb.querySelector('.tn').textContent = song.tuning.notes.map(noteName).join(' ');
   tb.querySelector('.tname').textContent = song.tuning.name || 'Own tuning';
-  $('chordGrid').replaceChildren(...chords.map((c, i) => {
-    const sel = chosenName(c.frets, song.tuning.notes, c.root);
-    const name = h('span', { className: 'card-name' }, sel ? chordHTML(sel.parts) : '–');
-    if (sel && sel.text.length > 15) name.classList.add('longer');
-    else if (sel && sel.text.length > 11) name.classList.add('long');
-    const card = h('button', { type: 'button', className: 'chord-card', title: sel?.text || '' },
-      h('span', { className: 'card-num', textContent: i + 1 }), name, chordDiagram(c.frets, song.tuning.notes, sel?.root));
-    card.addEventListener('click', () => navigate(`#/song/${song.id}/chord/${c.id}`));
-    return card;
-  }));
-  $('chordsEmpty').hidden = chords.length > 0;
+  let k = 0;
+  $('chordGrid').replaceChildren(...items.map((it) => (it.kind === 'section' ? sectionEl(it) : cardEl(it, ++k))));
+  $('chordsEmpty').hidden = items.length > 0;
+  $('chordsEmpty').textContent = inbox ? 'Nothing here yet. Chords saved from the analyzer without a song land here.' : 'No chords yet. Tap + to add one.';
   document.title = `${song.name} · Chords`;
+}
+
+function cardEl(c, number) {
+  const t = tuningOf(c);
+  const sel = chosenName(c.frets, t.notes, c.root);
+  const name = h('span', { className: 'card-name' }, sel ? chordHTML(sel.parts) : '–');
+  if (sel && sel.text.length > 15) name.classList.add('longer');
+  else if (sel && sel.text.length > 11) name.classList.add('long');
+  const card = h('button', { type: 'button', className: 'chord-card', title: sel?.text || '' },
+    h('span', { className: 'card-num', textContent: number }), name, chordDiagram(c.frets, t.notes, sel?.root),
+    isInbox(S.song.song) && !sameNotes(t, STANDARD) ? h('span', { className: 'card-tuning', textContent: tuningLabel(t) }) : null);
+  card.dataset.id = c.id;
+  card._item = c;
+  card.addEventListener('click', () => navigate(`#/song/${S.song.song.id}/chord/${c.id}`));
+  return card;
+}
+
+function sectionEl(sec) {
+  const name = h('span', { className: 'section-name', textContent: sec.label || 'Section', title: 'Rename' });
+  const el = h('div', { className: 'section-item' }, name, h('span', { className: 'section-line' }));
+  el.dataset.id = sec.id;
+  el._item = sec;
+  name.addEventListener('click', () => renameSection(sec, name));
+  return el;
+}
+
+function renameSection(sec, nameEl) {
+  inlineEdit(nameEl, sec.label || 'Section', async (v) => {
+    try { S.song = await api('PATCH', `/items/${sec.id}`, { label: v }); renderSong(); } catch (e) { toast(e.message); }
+  });
 }
 
 function renameSong() {
   const { song } = S.song;
+  if (isInbox(song)) return;
   inlineEdit($('songTitle'), song.name, async (v) => {
     try { S.song = await api('PATCH', `/songs/${song.id}`, { name: v }); renderSong(); } catch (e) { toast(e.message); }
   });
 }
 $('songTitle').addEventListener('click', renameSong);
 $('songBack').addEventListener('click', () => up('#/'));
-$('addChord').addEventListener('click', () => navigate(`#/song/${S.song.song.id}/new/${S.song.chords.length}`));
+$('addChord').addEventListener('click', () => navigate(`#/song/${S.song.song.id}/new/${S.song.items.length}`));
+
+$('addSection').addEventListener('click', async () => {
+  try {
+    const res = await api('POST', `/songs/${S.song.song.id}/items`, { kind: 'section', label: 'Section' });
+    S.song = { song: res.song, items: res.items };
+    renderSong();
+    const el = $('chordGrid').querySelector(`[data-id="${res.itemId}"] .section-name`);
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    if (el) renameSection(S.song.items.find((i) => i.id === res.itemId), el);
+  } catch (e) { toast(e.message); }
+});
+
+sortable($('chordGrid'), {
+  items: '[data-id]',
+  async onOrder(ids) {
+    try { S.song = await api('PUT', `/songs/${S.song.song.id}/order`, { ids }); } catch (e) { toast(e.message); }
+    renderSong();
+  },
+  async onMenu(el) {
+    const it = el._item;
+    if (it.kind === 'section') {
+      const v = await menu({ title: it.label || 'Section', items: [{ label: 'Rename', value: 'rename' }, { label: 'Delete section', value: 'delete', kind: 'danger' }] });
+      if (v === 'rename') renameSection(it, el.querySelector('.section-name'));
+      if (v === 'delete') await deleteItem(it);
+      return;
+    }
+    const name = chosenName(it.frets, tuningOf(it).notes, it.root)?.text || 'Chord';
+    const v = await menu({ title: name, items: [{ label: isInbox(S.song.song) ? 'Move to a song…' : 'Move to…', value: 'move' }, { label: 'Delete chord', value: 'delete', kind: 'danger' }] });
+    if (v === 'move') await moveChord(it, name);
+    if (v === 'delete') await deleteItem(it);
+  },
+});
+
+async function deleteItem(it) {
+  try { S.song = await api('DELETE', `/items/${it.id}`); renderSong(); } catch (e) { toast(e.message); }
+}
+
+/** Ask where a chord should go: Unsorted or one of the songs (without `exceptId`). */
+async function pickDestination(title, exceptId) {
+  const songs = (await api('GET', '/songs')).filter((s) => s.id !== exceptId);
+  const id = await menu({
+    title,
+    items: songs.map((s) => ({
+      label: isInbox(s) ? 'Unsorted' : s.name,
+      hint: isInbox(s) ? 'no song' : tuningLabel(s.tuning),
+      value: s.id,
+    })),
+  });
+  return id == null ? null : songs.find((s) => s.id === id);
+}
+
+/** A shape keeps its frets; in another tuning that means other notes. Ask first. */
+async function tuningOk(target, from) {
+  if (isInbox(target) || sameNotes(target.tuning, from)) return true;
+  return ask({
+    title: `“${target.name}” is in ${tuningLabel(target.tuning)}`,
+    text: `The shape is saved as it is, so its notes change from ${tuningLabel(from)} to ${tuningLabel(target.tuning)}.`,
+    buttons: [{ label: 'Cancel', value: false }, { label: 'Save anyway', value: true, kind: 'primary' }],
+  });
+}
+
+async function moveChord(it, name) {
+  try {
+    const target = await pickDestination(`Move ${name} to`, S.song.song.id);
+    if (!target || !(await tuningOk(target, tuningOf(it)))) return;
+    S.song = await api('POST', `/items/${it.id}/move`, { songId: target.id });
+    renderSong();
+    toast(`Moved to “${isInbox(target) ? 'Unsorted' : target.name}”`);
+  } catch (e) { toast(e.message); }
+}
 
 $('songTuning').addEventListener('click', () => {
   const { song } = S.song;
@@ -252,17 +393,6 @@ $('songTuning').addEventListener('click', () => {
   });
 });
 
-$('deleteSong').addEventListener('click', async () => {
-  const { song, chords } = S.song;
-  const ok = await ask({
-    title: `Delete “${song.name}”?`,
-    text: chords.length ? `Its ${countText(chords.length)} go with it. This can't be undone.` : "This can't be undone.",
-    buttons: [{ label: 'Cancel', value: false }, { label: 'Delete', value: true, kind: 'danger-fill' }],
-  });
-  if (!ok) return;
-  try { await api('DELETE', `/songs/${song.id}`); S.song = null; navigate('#/', { replace: true }); } catch (e) { toast(e.message); }
-});
-
 // ---- analyzer: free, or on a song's chords ------------------------------------------------
 
 function openScratch() {
@@ -271,35 +401,46 @@ function openScratch() {
   try { saved = JSON.parse(localStorage.getItem(SCRATCH_KEY) || 'null'); } catch { /* none */ }
   A.load({ frets: saved?.frets || null, root: saved?.root ?? null, tuning: saved?.tuning || STANDARD });
   S.ctx.loading = false;
+  $('aContext').textContent = 'Analyzer';
   document.title = 'Analyzer · Chords';
   show('analyzer');
-  updateSongbar();
+  updateBars();
 }
 
 async function openChord(songId, chordId) {
   await loadSong(songId);
-  const index = S.song.chords.findIndex((c) => c.id === chordId);
-  if (index < 0) { toast('That chord is gone'); return navigate(`#/song/${songId}`, { replace: true }); }
-  const c = S.song.chords[index];
-  S.ctx = { mode: 'song', songId, chordId, index, base: null, loading: true };
-  A.load({ frets: c.frets, root: c.root, tuning: S.song.song.tuning });
+  const c = S.song.items.find((i) => i.id === chordId && i.kind === 'chord');
+  if (!c) { toast('That chord is gone'); return navigate(`#/song/${songId}`, { replace: true }); }
+  S.ctx = { mode: 'song', songId, chordId, at: S.song.items.indexOf(c), base: null, loading: true };
+  A.load({ frets: c.frets, root: c.root, tuning: tuningOf(c) });
   S.ctx.base = A.value();
   S.ctx.loading = false;
-  document.title = `${S.song.song.name} · Chords`;
-  show('analyzer');
-  updateSongbar();
+  enterSongMode();
 }
 
-async function openDraft(songId, index) {
+async function openDraft(songId, at) {
   await loadSong(songId);
-  const n = S.song.chords.length;
-  const at = Number.isInteger(index) ? Math.max(0, Math.min(n, index)) : n;
-  S.ctx = { mode: 'song', songId, chordId: null, index: at, base: null, loading: true };
-  A.load({ frets: null, root: null, tuning: S.song.song.tuning });
+  const items = S.song.items;
+  const pos = Number.isInteger(at) ? Math.max(0, Math.min(items.length, at)) : items.length;
+  // in Unsorted a new chord takes the tuning of its neighbour, or the free analyzer's
+  let tuning = S.song.song.tuning;
+  if (isInbox(S.song.song)) {
+    const near = items.slice(0, pos).reverse().find((i) => i.kind === 'chord') || items.slice(pos).find((i) => i.kind === 'chord');
+    let scratch = null;
+    try { scratch = JSON.parse(localStorage.getItem(SCRATCH_KEY) || 'null')?.tuning; } catch { /* none */ }
+    tuning = near?.tuning || scratch || STANDARD;
+  }
+  S.ctx = { mode: 'song', songId, chordId: null, at: pos, base: null, loading: true, tuning };
+  A.load({ frets: null, root: null, tuning });
   S.ctx.loading = false;
+  enterSongMode();
+}
+
+function enterSongMode() {
+  $('aContext').textContent = S.song.song.name;
   document.title = `${S.song.song.name} · Chords`;
   show('analyzer');
-  updateSongbar();
+  updateBars();
 }
 
 function isDirty() {
@@ -316,33 +457,46 @@ function analyzerChanged() {
   if (c.mode === 'scratch') {
     try { localStorage.setItem(SCRATCH_KEY, JSON.stringify({ tuning: A.tuning, ...A.value() })); } catch { /* ignore */ }
   }
-  updateSongbar();
+  updateBars();
 }
 
-const PREV_PATH = 'M15 6l-6 6 6 6', NEXT_PATH = 'M9 6l6 6-6 6';
+/** Where the current chord sits among the song's chords (sections don't count). */
+function chordNav() {
+  const items = S.song.items, c = S.ctx;
+  const chordPos = items.map((it, i) => (it.kind === 'chord' ? i : -1)).filter((i) => i >= 0);
+  if (c.chordId != null) {
+    const p = items.findIndex((it) => it.id === c.chordId);
+    const k = chordPos.indexOf(p);
+    return { draft: false, p, k, n: chordPos.length, prev: k > 0 ? items[chordPos[k - 1]] : null, next: k < chordPos.length - 1 ? items[chordPos[k + 1]] : null };
+  }
+  const before = chordPos.filter((i) => i < c.at), after = chordPos.filter((i) => i >= c.at);
+  return { draft: true, p: c.at, k: before.length, n: chordPos.length + 1, prev: before.length ? items[before.at(-1)] : null, next: after.length ? items[after[0]] : null };
+}
 
-function updateSongbar() {
+const NEXT_PATH = 'M9 6l6 6-6 6';
+
+function updateBars() {
   const c = S.ctx;
-  const bar = $('songbar');
-  bar.hidden = c?.mode !== 'song';
-  document.body.classList.toggle('song-mode', !bar.hidden);
-  if (bar.hidden) return;
-  const n = S.song.chords.length;
-  const draft = c.chordId == null;
-  $('chordPos').textContent = draft ? `New · ${c.index + 1} of ${n + 1}` : `${c.index + 1} of ${n}`;
-  $('prevChord').classList.toggle('dim', c.index === 0);
-  $('prevChord').classList.toggle('no-hold', draft);
-  const atEnd = draft ? c.index >= n : c.index === n - 1;
+  const song = c?.mode === 'song';
+  $('songbar').hidden = !song;
+  $('scratchbar').hidden = c?.mode !== 'scratch';
+  document.body.classList.toggle('song-mode', song);
+  if (c?.mode === 'scratch') { $('saveScratch').disabled = !A.hasNotes(); return; }
+  if (!song) return;
+  const nav = chordNav();
+  $('chordPos').textContent = nav.draft ? `New · ${nav.k + 1} of ${nav.n}` : `${nav.k + 1} of ${nav.n}`;
+  $('prevChord').classList.toggle('dim', !nav.prev);
+  $('prevChord').classList.toggle('no-hold', nav.draft);
   const next = $('nextChord');
-  next.classList.toggle('dim', draft && atEnd);
-  next.classList.toggle('no-hold', draft);
-  next.classList.toggle('add', !draft && atEnd);
-  next.querySelector('path').setAttribute('d', !draft && atEnd ? ICON.plus : NEXT_PATH);
-  next.title = !draft && atEnd ? 'Add a chord at the end' : 'Next chord (]) · hold to add a chord after this one';
+  const addAtEnd = !nav.draft && !nav.next;
+  next.classList.toggle('dim', nav.draft && !nav.next);
+  next.classList.toggle('no-hold', nav.draft);
+  next.classList.toggle('add', addAtEnd);
+  next.querySelector('path').setAttribute('d', addAtEnd ? ICON.plus : NEXT_PATH);
+  next.title = addAtEnd ? 'Add a chord at the end' : 'Next chord (]) · hold to add a chord after this one';
   const save = $('saveChord');
   if (!save.classList.contains('saved')) save.disabled = !(isDirty() && A.hasNotes());
-  $('deleteChord').hidden = draft;
-  $('aBack').title = 'Back to the song';
+  $('deleteChord').hidden = nav.draft;
 }
 
 async function guard() {
@@ -358,27 +512,26 @@ async function guard() {
 
 function goTo(target) {
   const id = S.ctx.songId;
-  navigate(target.chordId != null ? `#/song/${id}/chord/${target.chordId}` : `#/song/${id}/new/${target.draft}`, { replace: true });
+  navigate(target.chordId != null ? `#/song/${id}/chord/${target.chordId}` : `#/song/${id}/new/${target.at}`, { replace: true });
 }
 
 async function step(dir) {
-  const c = S.ctx;
-  if (c?.mode !== 'song') return;
-  const chords = S.song.chords, n = chords.length;
+  if (S.ctx?.mode !== 'song') return;
+  const nav = chordNav();
   let target = null;
-  if (dir < 0) { if (c.index > 0) target = { chordId: chords[c.index - 1].id }; }
-  else if (c.chordId != null) target = c.index + 1 < n ? { chordId: chords[c.index + 1].id } : { draft: n };
-  else if (c.index < n) target = { chordId: chords[c.index].id };
+  if (dir < 0) { if (nav.prev) target = { chordId: nav.prev.id }; }
+  else if (nav.next) target = { chordId: nav.next.id };
+  else if (!nav.draft) target = { at: S.song.items.length };
   if (!target) return;
   if (!(await guard())) return;
   goTo(target);
 }
 
 async function insert(dir) {
-  const c = S.ctx;
-  if (c?.mode !== 'song' || c.chordId == null) return;
+  if (S.ctx?.mode !== 'song' || S.ctx.chordId == null) return;
   if (!(await guard())) return;
-  goTo({ draft: dir < 0 ? S.ctx.index : S.ctx.index + 1 });
+  const nav = chordNav();
+  goTo({ at: dir < 0 ? nav.p : nav.p + 1 });
 }
 
 async function saveChord() {
@@ -389,20 +542,20 @@ async function saveChord() {
   btn.disabled = true;
   try {
     const res = c.chordId == null
-      ? await api('POST', `/songs/${c.songId}/chords`, { ...v, index: c.index })
-      : await api('PATCH', `/chords/${c.chordId}`, v);
-    S.song = { song: res.song, chords: res.chords };
-    S.ctx = { ...c, chordId: res.chordId, index: res.chords.findIndex((x) => x.id === res.chordId), base: v };
-    history.replaceState(history.state, '', `#/song/${c.songId}/chord/${res.chordId}`);
+      ? await api('POST', `/songs/${c.songId}/items`, { kind: 'chord', ...v, index: c.at, tuning: isInbox(S.song.song) ? c.tuning : undefined })
+      : await api('PATCH', `/items/${c.chordId}`, v);
+    S.song = { song: res.song, items: res.items };
+    S.ctx = { ...c, chordId: res.itemId, at: res.items.findIndex((x) => x.id === res.itemId), base: v };
+    history.replaceState(history.state, '', `#/song/${c.songId}/chord/${res.itemId}`);
     S.hash = location.hash;
     btn.textContent = 'Saved';
     btn.classList.add('saved');
-    setTimeout(() => { btn.textContent = 'Save'; btn.classList.remove('saved'); updateSongbar(); }, 1100);
-    updateSongbar();
+    setTimeout(() => { btn.textContent = 'Save'; btn.classList.remove('saved'); updateBars(); }, 1100);
+    updateBars();
     return true;
   } catch (e) {
     toast(e.message);
-    updateSongbar();
+    updateBars();
     return false;
   }
 }
@@ -413,14 +566,30 @@ async function deleteChord() {
   const ok = await ask({ title: 'Delete this chord?', buttons: [{ label: 'Cancel', value: false }, { label: 'Delete', value: true, kind: 'danger-fill' }] });
   if (!ok) return;
   try {
-    const res = await api('DELETE', `/chords/${c.chordId}`);
+    const nav = chordNav();
+    const res = await api('DELETE', `/items/${c.chordId}`);
     S.song = res;
     S.ctx.loading = true;   // nothing left to save
-    const n = res.chords.length;
-    if (!n) return navigate(`#/song/${c.songId}`, { replace: true });
-    goTo({ chordId: res.chords[Math.min(c.index, n - 1)].id });
+    const target = nav.next || nav.prev;
+    if (!target) return navigate(`#/song/${c.songId}`, { replace: true });
+    goTo({ chordId: target.id });
   } catch (e) { toast(e.message); }
 }
+
+// the free analyzer: save the chord to Unsorted or the end of a song
+$('saveScratch').addEventListener('click', async () => {
+  if (!A.hasNotes()) return;
+  try {
+    const target = await pickDestination('Save this chord to');
+    if (!target || !(await tuningOk(target, A.tuning))) return;
+    await api('POST', `/songs/${target.id}/items`, { kind: 'chord', ...A.value(), tuning: isInbox(target) ? A.tuning : undefined });
+    const btn = $('saveScratch');
+    btn.textContent = 'Saved';
+    btn.classList.add('saved');
+    setTimeout(() => { btn.textContent = 'Save chord…'; btn.classList.remove('saved'); }, 1100);
+    toast(`Saved to “${isInbox(target) ? 'Unsorted' : target.name}”`);
+  } catch (e) { toast(e.message); }
+});
 
 // press = step, hold = new chord on that side
 function holdable(btn, dir) {
@@ -457,7 +626,9 @@ $('aBack').addEventListener('click', async () => {
 });
 
 $('tuningBtn').addEventListener('click', () => {
-  if (S.ctx?.mode === 'song') return toast('The tuning is set for the whole song, on the song page');
+  if (S.ctx?.mode === 'song') {
+    return toast(isInbox(S.song.song) ? 'Chords in Unsorted keep the tuning they were saved with' : 'The tuning is set for the whole song, on the song page');
+  }
   openTuningSheet({
     current: A.tuning,
     custom: S.custom,
@@ -475,6 +646,7 @@ document.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
     e.preventDefault();
     if (S.ctx?.mode === 'song' && !$('saveChord').disabled) saveChord();
+    if (S.ctx?.mode === 'scratch') $('saveScratch').click();
     return;
   }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
