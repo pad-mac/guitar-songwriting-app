@@ -690,3 +690,14 @@ body[data-view="analyzer"] .toast { bottom: calc(84px + env(safe-area-inset-bott
 .pop-menu .menu-item.danger { color: #d6332a; }
 :root[data-theme="dark"] .pop-menu .menu-item.danger { color: #ff8a80; }
 .lp-on { transform: scale(1.02); }
+
+/* ---- All notes: every position named, faint, under the dots ---- */
+.fb .all-notes .ko { fill: var(--board); }
+.fb .all-notes text { fill: var(--faint); opacity: 0.9; text-anchor: middle; dominant-baseline: central; font-weight: 500; pointer-events: none; }
+:root[data-theme="dark"] .fb .all-notes text { opacity: 1; }
+.fb .all-notes { animation: all-in 140ms ease; }
+@keyframes all-in { from { opacity: 0; } }
+body.v .side .clear { grid-column: auto; }
+.all-toggle[aria-pressed="true"] { background: var(--selected) !important; color: var(--text); box-shadow: var(--edge), inset 0 0 0 1.5px color-mix(in srgb, var(--dot) 55%, transparent); }
+body.h .all-toggle { margin-left: auto; }
+body.h .all-toggle + .clear { margin-left: 0; }

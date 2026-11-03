@@ -795,6 +795,7 @@ document.addEventListener('keydown', (e) => {
   else if (k === 'i' || k === 'n') A.toggleDisplay();
   else if (k === 'Backspace' || k === 'Delete') A.clear();
   else if (k === 't') $('tuningBtn').click();
+  else if (k === 'a') A.toggleAllNotes();
   else if (k === '[') step(-1);
   else if (k === ']') step(1);
   else if (k === '{') insert(-1);

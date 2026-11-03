@@ -71,6 +71,34 @@ export class Fretboard {
     this.numEls.forEach((t, f) => t.classList.toggle('on', used.has(f)));
   }
 
+  /** Show the name of every note on the board for these open-string MIDI notes, or nothing (null). */
+  setAllNotes(tuningNotes) {
+    const key = tuningNotes ? tuningNotes.join(',') : '';
+    if (key === this.allKey) return;
+    this.allKey = key;
+    this.allNotes = tuningNotes;
+    this.#drawAllNotes();
+  }
+
+  #drawAllNotes() {
+    const layer = this.allLayer, g = this.g;
+    if (!layer || !g) return;
+    layer.replaceChildren();
+    const t = this.allNotes;
+    if (!t || t.length !== g.n) return;
+    const names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const size = Math.max(9, g.r * 0.74);
+    for (let s = 0; s < g.n; s++) {
+      for (let f = 1; f <= g.N; f++) {
+        const [x, y] = g.xy(g.along(f), g.across(s));
+        const name = names[(t[s] + f) % 12];
+        // a small cut-out in the board's colour, so the string doesn't run through the letters
+        el('rect', { class: 'ko', x: x - size * (name.length > 1 ? 0.78 : 0.5), y: y - size * 0.62, width: size * (name.length > 1 ? 1.56 : 1), height: size * 1.24, rx: size * 0.3 }, layer);
+        el('text', { x, y, 'font-size': size }, layer).textContent = name;
+      }
+    }
+  }
+
   #maybeBuild() {
     const { width, height } = this.container.getBoundingClientRect();
     const w = Math.round(width), h = Math.round(height);
@@ -165,6 +193,9 @@ export class Fretboard {
       const t = el('text', { x, y, 'font-size': Math.min(17, g.r * 0.95) }, secs);
       this.secondary.push(t);
     }
+    // every note of the tuning, faint, under the dots (the "All notes" toggle)
+    this.allLayer = el('g', { class: 'all-notes' }, svg);
+    this.#drawAllNotes();
     // hover ghost
     this.ghost = el('circle', { class: 'ghost', r: g.r, cx: 0, cy: 0 }, svg);
     // dots

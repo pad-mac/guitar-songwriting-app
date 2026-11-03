@@ -6,6 +6,7 @@ import { $, h, chordHTML } from './ui.js';
 
 export const FRETS = 15;
 const DISPLAY_KEY = 'gsa:display';
+const ALL_KEY = 'gsa:allnotes';
 
 export function createAnalyzer({ onChange } = {}) {
   const st = {
@@ -13,6 +14,7 @@ export function createAnalyzer({ onChange } = {}) {
     root: null,
     pinned: false,
     display: (() => { try { return localStorage.getItem(DISPLAY_KEY) || 'notes'; } catch { return 'notes'; } })(),
+    allNotes: (() => { try { return localStorage.getItem(ALL_KEY) === '1'; } catch { return false; } })(),
     tuning: { name: 'Standard', notes: [40, 45, 50, 55, 59, 64] },
   };
   let current = [];
@@ -76,6 +78,8 @@ export function createAnalyzer({ onChange } = {}) {
     $('lower').disabled = !used.length || Math.min(...used) <= 0;
     $('higher').disabled = !used.length || Math.max(...used) >= FRETS;
     $('clear').disabled = !used.length;
+    $('allNotes').setAttribute('aria-pressed', String(st.allNotes));
+    board.setAllNotes(st.allNotes ? t.notes : null);
     for (const b of document.querySelectorAll('[data-display]')) b.setAttribute('aria-pressed', String(b.dataset.display === st.display));
     $('tuningNotes').textContent = t.notes.map(noteName).join(' ');
     $('tuningName').textContent = t.name || 'Own tuning';
@@ -125,6 +129,11 @@ export function createAnalyzer({ onChange } = {}) {
       try { localStorage.setItem(DISPLAY_KEY, d); } catch { /* ignore */ }
       render();
     },
+    toggleAllNotes() {
+      st.allNotes = !st.allNotes;
+      try { localStorage.setItem(ALL_KEY, st.allNotes ? '1' : '0'); } catch { /* ignore */ }
+      render();
+    },
     toggleDisplay() { api.setDisplay(st.display === 'notes' ? 'intervals' : 'notes'); },
     layout,
   };
@@ -137,6 +146,7 @@ export function createAnalyzer({ onChange } = {}) {
   $('lower').addEventListener('click', () => api.shift(-1));
   $('higher').addEventListener('click', () => api.shift(1));
   $('clear').addEventListener('click', () => api.clear());
+  $('allNotes').addEventListener('click', () => api.toggleAllNotes());
 
   return api;
 }
