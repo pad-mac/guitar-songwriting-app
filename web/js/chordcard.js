@@ -43,6 +43,13 @@ export function chordDiagram(frets, tuningNotes, rootPc, { mirror = false } = {}
   const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, class: 'diagram', 'aria-hidden': 'true' });
   for (let k = 1; k <= span; k++) el('line', { x1: left, x2: right, y1: y0 + k * ch, y2: y0 + k * ch, class: 'd-fret' }, svg);
   el('line', { x1: left - (start === 1 ? 1.5 : 0), x2: right + (start === 1 ? 1.5 : 0), y1: y0, y2: y0, class: start === 1 ? 'd-nut' : 'd-fret d-top' }, svg);
+  // position dots (3, 5, 7, 9, 12, 15 …) inside the window, as on the fretboard
+  const lerpX = (t) => xs(0) + (xs(n - 1) - xs(0)) * t;
+  for (let k = 0; k < span; k++) {
+    const f = start + k;
+    const at = f % 12 === 0 ? [0.3, 0.7] : [3, 5, 7, 9, 15, 17, 19, 21].includes(f) ? [0.5] : [];
+    for (const t of at) el('circle', { cx: lerpX(t), cy: y0 + (k + 0.5) * ch, r: Math.min(gx, ch) * 0.13, class: 'd-inlay' }, svg);
+  }
   for (let s = 0; s < n; s++) el('line', { x1: xs(s), x2: xs(s), y1: y0, y2: y0 + span * ch, class: 'd-string', 'stroke-width': 0.8 + (n - 1 - s) * 0.26 }, svg);
   for (let k = 0; k < span; k++) {
     el('text', { x: mirror ? W - 8 : 8, y: y0 + (k + 0.5) * ch, class: 'd-num' }, svg).textContent = start + k;

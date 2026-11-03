@@ -10,7 +10,7 @@ Version 0.3: songs are saved on the server, behind a password.
 - The pencil renames a song. Hold a song (right-click on a computer) for Rename and Delete. + starts a new song.
 - A song shows its chords as cards, two per row on the phone: the name, and the shape cut down to the frets it uses, numbered on the left. Open and muted strings sit on a line above the cut-out, wherever on the neck it is.
 - **+ Section** adds a named separator (Verse, Chorus…). Tap its name to rename it.
-- Drag cards and sections to reorder them. On the phone: hold until the card lifts, then move it. Holding without moving opens a menu: move the chord to another song or to Unsorted, or delete it. On a computer: drag with the mouse, right-click for the menu.
+- Drag cards and sections to reorder them. On the phone: hold until the card lifts, then move it. Keep holding and a menu opens under your finger: move the chord to another song or to Unsorted, or delete it. Moving the finger then closes the menu and drags instead. On a computer: drag with the mouse, right-click for the menu.
 - The tuning under the title changes the tuning for all chords of the song. Chords in Unsorted keep the tuning they were saved with.
 
 **Analyzer on a song**

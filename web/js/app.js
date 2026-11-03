@@ -5,7 +5,7 @@ import { noteName } from './chords.js';
 import { chordDiagram, chosenName } from './chordcard.js';
 import { openTuningSheet, sheetOpen, closeSheet } from './tuningsheet.js';
 import { sortable } from './sortable.js';
-import { $, h, svgIcon, ICON, chordHTML, formatDate, toast, ask, menu, inlineEdit } from './ui.js';
+import { $, h, svgIcon, ICON, chordHTML, formatDate, toast, ask, menu, atEl, inlineEdit } from './ui.js';
 
 const STANDARD = { name: PRESETS[0].name, notes: [...PRESETS[0].notes] };
 const SCRATCH_KEY = 'gsa:scratch';
@@ -241,19 +241,22 @@ function renameInList(s, nameEl) {
 
 sortable($('songList'), {
   items: '.song-row[data-id]',
-  async onMenu(row) {
+  onMenu(row, at) {
     const s = row._song;
-    const v = await menu({ title: s.name, items: [{ label: 'Rename', value: 'rename' }, { label: 'Delete song', value: 'delete', kind: 'danger' }] });
-    if (v === 'rename') renameInList(s, row._name);
-    if (v === 'delete') {
-      const ok = await ask({
-        title: `Delete “${s.name}”?`,
-        text: s.chord_count ? `Its ${countText(s.chord_count)} go with it. This can't be undone.` : "This can't be undone.",
-        buttons: [{ label: 'Cancel', value: false }, { label: 'Delete', value: true, kind: 'danger-fill' }],
-      });
-      if (!ok) return;
-      try { await api('DELETE', `/songs/${s.id}`); showSongs(); } catch (e) { toast(e.message); }
-    }
+    const m = menu({ title: s.name, at, items: [{ label: 'Rename', value: 'rename' }, { label: 'Delete song', value: 'delete', kind: 'danger' }] });
+    m.then(async (v) => {
+      if (v === 'rename') renameInList(s, row._name);
+      if (v === 'delete') {
+        const ok = await ask({
+          title: `Delete “${s.name}”?`,
+          text: s.chord_count ? `Its ${countText(s.chord_count)} go with it. This can't be undone.` : "This can't be undone.",
+          buttons: [{ label: 'Cancel', value: false }, { label: 'Delete', value: true, kind: 'danger-fill' }],
+        });
+        if (!ok) return;
+        try { await api('DELETE', `/songs/${s.id}`); showSongs(); } catch (e) { toast(e.message); }
+      }
+    });
+    return m;
   },
 });
 
@@ -378,18 +381,23 @@ sortable($('chordGrid'), {
     try { S.song = await api('PUT', `/songs/${S.song.song.id}/order`, { ids }); } catch (e) { toast(e.message); }
     renderSong();
   },
-  async onMenu(el) {
+  onMenu(el, at) {
     const it = el._item;
     if (it.kind === 'section') {
-      const v = await menu({ title: it.label || 'Section', items: [{ label: 'Rename', value: 'rename' }, { label: 'Delete section', value: 'delete', kind: 'danger' }] });
-      if (v === 'rename') renameSection(it, el.querySelector('.section-name'));
-      if (v === 'delete') await deleteItem(it);
-      return;
+      const m = menu({ title: it.label || 'Section', at, items: [{ label: 'Rename', value: 'rename' }, { label: 'Delete section', value: 'delete', kind: 'danger' }] });
+      m.then((v) => {
+        if (v === 'rename') renameSection(it, el.querySelector('.section-name'));
+        if (v === 'delete') deleteItem(it);
+      });
+      return m;
     }
     const name = chosenName(it.frets, tuningOf(it).notes, it.root)?.text || 'Chord';
-    const v = await menu({ title: name, items: [{ label: isInbox(S.song.song) ? 'Move to a song…' : 'Move to…', value: 'move' }, { label: 'Delete chord', value: 'delete', kind: 'danger' }] });
-    if (v === 'move') await moveChord(it, name);
-    if (v === 'delete') await deleteItem(it);
+    const m = menu({ title: name, at, items: [{ label: isInbox(S.song.song) ? 'Move to a song…' : 'Move to…', value: 'move' }, { label: 'Delete chord', value: 'delete', kind: 'danger' }] });
+    m.then((v) => {
+      if (v === 'move') moveChord(it, name, { ...at, held: false });
+      if (v === 'delete') deleteItem(it);
+    });
+    return m;
   },
 });
 
@@ -398,10 +406,11 @@ async function deleteItem(it) {
 }
 
 /** Ask where a chord should go: Unsorted or one of the songs (without `exceptId`). */
-async function pickDestination(title, exceptId) {
+async function pickDestination(title, exceptId, at) {
   const songs = (await api('GET', '/songs')).filter((s) => s.id !== exceptId);
   const id = await menu({
     title,
+    at,
     items: songs.map((s) => ({
       label: isInbox(s) ? 'Unsorted' : s.name,
       hint: isInbox(s) ? 'no song' : tuningLabel(s.tuning),
@@ -421,9 +430,9 @@ async function tuningOk(target, from) {
   });
 }
 
-async function moveChord(it, name) {
+async function moveChord(it, name, at) {
   try {
-    const target = await pickDestination(`Move ${name} to`, S.song.song.id);
+    const target = await pickDestination(`Move ${name} to`, S.song.song.id, at);
     if (!target || !(await tuningOk(target, tuningOf(it)))) return;
     S.song = await api('POST', `/items/${it.id}/move`, { songId: target.id });
     renderSong();
@@ -590,10 +599,11 @@ async function insert(dir, { copy = false } = {}) {
 }
 
 // holding ‹ or › (or + on the last chord): a new, empty chord or a copy of this one
-async function holdAction(dir) {
+async function holdAction(dir, at) {
   if (S.ctx?.mode !== 'song' || S.ctx.chordId == null) return;
   const v = await menu({
     title: dir < 0 ? 'Before this chord' : 'After this chord',
+    at,
     items: [{ label: 'New chord', value: 'new' }, { label: 'Duplicate this chord', value: 'copy' }],
   });
   if (v) insert(dir, { copy: v === 'copy' });
@@ -662,7 +672,7 @@ $('saveToSong').addEventListener('click', async () => {
   try {
     const songs = (await api('GET', '/songs')).filter((x) => !isInbox(x));
     if (!songs.length) return toast('No songs yet — create one on the songs screen');
-    const id = await menu({ title: 'Add this chord to', items: songs.map((x) => ({ label: x.name, hint: tuningLabel(x.tuning), value: x.id })) });
+    const id = await menu({ title: 'Add this chord to', at: atEl($('saveToSong')), items: songs.map((x) => ({ label: x.name, hint: tuningLabel(x.tuning), value: x.id })) });
     const target = songs.find((x) => x.id === id);
     if (!target || !(await tuningOk(target, A.tuning))) return;
     await saveScratchTo(target);
@@ -713,8 +723,8 @@ function slideIn(dir) {
   }
 }
 
-// press = step; hold = new chord or duplicate on that side (the menu opens on release,
-// so the lifting finger can't tap anything in it)
+// press = step; hold = new chord or duplicate on that side. The menu opens as soon as the hold
+// counts, with the finger still down; it takes taps only once the finger is lifted.
 function holdable(btn, dir) {
   let timer = null, held = false;
   const reset = () => { clearTimeout(timer); timer = null; btn.classList.remove('holding'); };
@@ -723,13 +733,17 @@ function holdable(btn, dir) {
     held = false;
     if (btn.classList.contains('no-hold')) return;
     btn.classList.add('holding');
-    timer = setTimeout(() => { held = true; navigator.vibrate?.(12); }, 480);
+    timer = setTimeout(() => {
+      held = true;
+      btn.classList.remove('holding');
+      navigator.vibrate?.(8);
+      holdAction(dir, { ...atEl(btn), held: true });
+    }, 480);
   });
-  btn.addEventListener('pointerup', () => {
-    reset();
-    if (held) holdAction(dir);
-  });
-  for (const ev of ['pointerleave', 'pointercancel']) btn.addEventListener(ev, () => { if (!held) reset(); });
+  const lift = () => { reset(); if (held) window.dispatchEvent(new Event('gsa:lp-up')); };
+  btn.addEventListener('pointerup', lift);
+  btn.addEventListener('pointercancel', lift);
+  btn.addEventListener('pointerleave', () => { if (!held) reset(); });
   btn.addEventListener('click', (e) => {
     if (held) { held = false; e.preventDefault(); return; }
     step(dir);

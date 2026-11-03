@@ -74,40 +74,62 @@ export function ask({ title, text = '', buttons }) {
   });
 }
 
-// ---- action menu --------------------------------------------------------------------------
-// menu({ title, items: [{ label, hint, value, kind }] }) → value of the picked item, or null
+// ---- menus -------------------------------------------------------------------------------
+// A frosted panel at the finger (or at the button that opened it), as in the reader.
+// menu({ title, items: [{ label, hint, value, kind }], at: { x, y, el, held } }) → Promise of the picked
+// value or null, with .close(). When the finger that opened it is still down (at.held), nothing in it
+// counts until a moment after that finger is lifted (the window event 'gsa:lp-up').
 
-export function menu({ title, items }) {
-  const wrap = $('dialog');
-  const box = wrap.querySelector('.dialog');
-  return new Promise((resolve) => {
-    const done = (v) => {
-      wrap.classList.remove('open', 'as-menu');
-      wrap.setAttribute('aria-hidden', 'true');
-      document.removeEventListener('keydown', onKey, true);
-      resolve(v);
-    };
-    const onKey = (e) => {
-      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(null); }
-    };
-    const list = h('div', { className: 'menu-items' }, items.map((it) => {
-      const b = h('button', { type: 'button', className: 'menu-item' + (it.kind ? ' ' + it.kind : '') },
-        h('span', { className: 'menu-label', textContent: it.label }),
-        it.hint ? h('span', { className: 'menu-hint', textContent: it.hint }) : null);
-      b.addEventListener('click', () => done(it.value));
-      return b;
-    }));
-    const cancel = h('button', { type: 'button', className: 'menu-item menu-cancel', textContent: 'Cancel' });
-    cancel.addEventListener('click', () => done(null));
-    box.replaceChildren(...[title ? h('h3', { textContent: title }) : null, list, cancel].filter(Boolean));
-    const opened = performance.now();
-    wrap.querySelector('.scrim').onclick = () => { if (performance.now() - opened > 400) done(null); };
-    list.style.pointerEvents = cancel.style.pointerEvents = 'none';     // no stray tap right after opening
-    setTimeout(() => { list.style.pointerEvents = cancel.style.pointerEvents = ''; }, 300);
-    document.addEventListener('keydown', onKey, true);
-    wrap.classList.add('open', 'as-menu');
-    wrap.setAttribute('aria-hidden', 'false');
-  });
+export const atEl = (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top, el }; };
+
+export function menu({ title, items, at }) {
+  at = at || { x: window.innerWidth / 2, y: window.innerHeight * 0.55 };
+  const scrim = h('div', { className: 'menu-scrim' });
+  const panel = h('div', { className: 'pop-menu', role: 'menu' });
+  let armedAt = at.held ? Infinity : performance.now() + 250;
+  const lifted = () => { if (armedAt === Infinity) armedAt = performance.now() + 120; };
+  const armed = () => performance.now() >= armedAt;
+  let resolve, done = false;
+  const p = new Promise((r) => { resolve = r; });
+  const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(null); } };
+  function close(v) {
+    if (done) return;
+    done = true;
+    window.removeEventListener('gsa:lp-up', lifted);
+    document.removeEventListener('keydown', onKey, true);
+    scrim.classList.remove('on');
+    panel.classList.remove('on');
+    at.el?.classList.remove('lp-on');
+    setTimeout(() => { scrim.remove(); panel.remove(); }, 180);
+    resolve(v);
+  }
+  window.addEventListener('gsa:lp-up', lifted);
+  document.addEventListener('keydown', onKey, true);
+  scrim.addEventListener('click', () => { if (armed()) close(null); });
+  if (title) panel.append(h('div', { className: 'menu-head' }, h('span', { textContent: title })));
+  for (const it of items) {
+    const b = h('button', { type: 'button', role: 'menuitem', className: 'menu-item' + (it.kind ? ' ' + it.kind : '') },
+      h('span', { className: 'menu-label', textContent: it.label }),
+      it.hint ? h('small', { className: 'menu-hint', textContent: it.hint }) : null);
+    b.addEventListener('click', () => { if (armed()) close(it.value); });
+    panel.append(b);
+  }
+  document.body.append(scrim, panel);
+  // under the finger if there is room, else above it; never off the screen
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const lo = 12, hi = vh - 12;
+  panel.style.maxHeight = `${hi - lo}px`;
+  const w = panel.offsetWidth, ht = panel.offsetHeight;
+  const left = Math.max(12, Math.min(vw - w - 12, at.x - w / 2));
+  const below = at.y + 14 + ht <= hi, above = at.y - 14 - ht >= lo;
+  const top = below ? at.y + 14 : above ? at.y - 14 - ht : Math.max(lo, Math.min(hi - ht, at.y + 14));
+  panel.style.left = `${left}px`;
+  panel.style.top = `${top}px`;
+  panel.style.transformOrigin = `${Math.round(at.x - left)}px ${below || !above ? '0px' : '100%'}`;
+  at.el?.classList.add('lp-on');
+  requestAnimationFrame(() => { scrim.classList.add('on'); panel.classList.add('on'); });
+  p.close = () => close(null);
+  return p;
 }
 
 // ---- inline rename ------------------------------------------------------------------------

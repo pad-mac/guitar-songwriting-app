@@ -121,7 +121,7 @@ export class Fretboard {
 
     // the board itself: a soft surface behind frets and strings
     {
-      const [x1, y1] = g.xy(g.nut, cLo - g.gap * 0.5), [x2, y2] = g.xy(g.wire(g.N), cHi + g.gap * 0.5);
+      const [x1, y1] = g.xy(g.nut, cLo), [x2, y2] = g.xy(g.wire(g.N), cHi);
       el('rect', { class: 'board-face', x: Math.min(x1, x2), y: Math.min(y1, y2), width: Math.abs(x2 - x1), height: Math.abs(y2 - y1) }, svg);
     }
     // inlays

@@ -1,9 +1,10 @@
 // Drag to reorder the items of a container, and long-press menus.
-//   touch: hold ~0.35 s and the item lifts; move to drag it; let go without moving = menu
+//   touch: hold ~0.3 s and the item lifts (move now to drag it); keep holding and the menu opens
+//          while the finger is still down; moving the finger then closes the menu and drags instead
 //   mouse: drag once moved a few pixels; right-click = menu
-// Without `onOrder` it only does the long-press menu.
+// onMenu(el, at) opens a menu and returns it (with .close()). Without onOrder: menu only.
 
-const HOLD_MS = 350;
+const LIFT_MS = 300, MENU_MS = 560;
 
 export function sortable(container, { items, onOrder, onMenu }) {
   let st = null;
@@ -15,9 +16,21 @@ export function sortable(container, { items, onOrder, onMenu }) {
     if (e.button !== 0 || st) return;
     const el = e.target.closest(items);
     if (!el || !container.contains(el) || e.target.closest('input, textarea')) return;
-    st = { el, id: e.pointerId, touch: e.pointerType !== 'mouse', x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, lifted: false, dragging: false };
-    if (st.touch) st.timer = setTimeout(lift, HOLD_MS);
+    st = { el, id: e.pointerId, touch: e.pointerType !== 'mouse', x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, lifted: false, dragging: false, menu: null };
+    if (st.touch) {
+      if (onOrder) st.timer = setTimeout(lift, LIFT_MS);
+      if (onMenu) st.menuTimer = setTimeout(openMenu, onOrder ? MENU_MS : 460);
+    }
   });
+
+  function openMenu() {
+    if (!st || st.dragging) return;
+    st.lifted = true;
+    st.el.classList.remove('lifted');
+    navigator.vibrate?.(8);
+    st.menuAt = { x: st.x, y: st.y };
+    st.menu = onMenu(st.el, { x: st.x, y: st.y, el: st.el, held: true }) || null;
+  }
 
   function lift() {
     if (!st) return;
@@ -32,6 +45,14 @@ export function sortable(container, { items, onOrder, onMenu }) {
     const dist = Math.hypot(e.clientX - st.x0, e.clientY - st.y0);
     if (st.dragging) return moveDrag();
     if (st.touch && !st.lifted) { if (dist > 8) cancel(); return; }
+    if (st.menu) {     // the menu is open and the finger moves on: it becomes a drag
+      if (onOrder && Math.hypot(e.clientX - st.menuAt.x, e.clientY - st.menuAt.y) > 12) {
+        st.menu.close?.();
+        st.menu = null;
+        startDrag();
+      }
+      return;
+    }
     if (onOrder && ((st.touch && st.lifted && dist > 6) || (!st.touch && dist > 5))) startDrag();
   });
   // once an item is lifted, the finger drags it instead of scrolling the page
@@ -47,7 +68,7 @@ export function sortable(container, { items, onOrder, onMenu }) {
     if (!el || e.target.closest('input')) return;
     e.preventDefault();
     if (st?.touch) return;            // touch long-press is handled above
-    onMenu?.(el);
+    onMenu?.(el, { x: e.clientX, y: e.clientY, el, held: false });
   });
   container.addEventListener('click', (e) => {
     if (swallowClick) { swallowClick = false; e.preventDefault(); e.stopPropagation(); }
@@ -55,12 +76,14 @@ export function sortable(container, { items, onOrder, onMenu }) {
 
   function cancel() {
     clearTimeout(st.timer);
+    clearTimeout(st.menuTimer);
     st.el.classList.remove('lifted');
     st = null;
   }
 
   function startDrag() {
     clearTimeout(st.timer);
+    clearTimeout(st.menuTimer);
     st.dragging = true;
     st.before = ids().join(',');
     const r = st.el.getBoundingClientRect();
@@ -129,7 +152,9 @@ export function sortable(container, { items, onOrder, onMenu }) {
     const s = st;
     st = null;
     clearTimeout(s.timer);
+    clearTimeout(s.menuTimer);
     if (s.touch && (s.lifted || s.dragging)) eatTouchEnd = true;
+    if (s.menu) window.dispatchEvent(new Event('gsa:lp-up'));     // the menu may take taps from now on
     s.el.classList.remove('lifted');
     if (s.dragging) {
       swallowClick = true;
@@ -141,9 +166,8 @@ export function sortable(container, { items, onOrder, onMenu }) {
       else if (!ok) {   // cancelled: put everything back as it was
         for (const id of s.before.split(',')) container.appendChild(container.querySelector(`[data-id="${id}"]`));
       }
-    } else if (s.lifted && ok) {
+    } else if (s.lifted) {
       swallowClick = true;
-      onMenu?.(s.el);
     }
     setTimeout(() => { swallowClick = false; }, 400);
   }
