@@ -80,7 +80,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--dot); outli
 .current { margin: 0; font-weight: 400; font-size: 38px; line-height: 1; padding: 0.28em 0 0.04em; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .current .hint { font-size: 18px; color: var(--faint); }
 .tuning-btn { display: grid; justify-items: center; gap: 4px; padding: 8px 12px; border-radius: 12px; transition: background var(--fast) ease; flex: none; }
-.tuning-btn:hover { background: var(--panel); }
+@media (hover: hover) and (pointer: fine) { .tuning-btn:hover { background: var(--panel); } }
 .tn { font-weight: 700; letter-spacing: 0.06em; word-spacing: 0.1em; font-size: 17px; color: var(--strong); margin-right: -0.06em; white-space: nowrap; }
 .tname { font-size: 13px; color: var(--muted); }
 
@@ -132,7 +132,7 @@ body.h .current { font-size: 44px; }
 .cands li { transition: opacity 140ms ease, transform 140ms var(--ease); }
 .cands li.enter { opacity: 0; transform: translateY(3px); }
 .cands button { display: block; width: 100%; text-align: left; padding: 14px 12px 10px; border-radius: 10px; font-size: 25px; line-height: 1; color: var(--muted); transition: color var(--fast) ease, background var(--fast) ease; }
-.cands button:hover { background: var(--panel-2); }
+@media (hover: hover) and (pointer: fine) { .cands button:hover { background: var(--panel-2); } }
 .cands button[aria-pressed="true"] { color: var(--text); }
 .cands.empty { background: transparent; }
 .cands button.long { font-size: 21px; }
@@ -150,14 +150,14 @@ body.h .cands button { width: auto; padding: 16px 16px 10px; font-size: 27px; }
 .seg button[aria-pressed="true"] { background: var(--seg-on); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
 .moves { display: flex; gap: 4px; }
 .move { display: grid; justify-items: center; gap: 2px; padding: 4px 10px; border-radius: 10px; font-size: 12px; color: var(--strong); transition: background var(--fast) ease, opacity var(--fast) ease; }
-.move:hover:not(:disabled) { background: var(--panel); }
+@media (hover: hover) and (pointer: fine) { .move:hover:not(:disabled) { background: var(--panel); } }
 .move:disabled, .clear:disabled { opacity: 0.3; }
 .move svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform 160ms var(--ease); }
 body.v .move.higher svg { transform: rotate(180deg); }
 body.h .move.lower svg { transform: rotate(-90deg); }
 body.h .move.higher svg { transform: rotate(90deg); }
 .clear { padding: 9px 12px; border-radius: 10px; font-size: 15px; color: var(--muted); transition: background var(--fast) ease, color var(--fast) ease, opacity var(--fast) ease; }
-.clear:hover:not(:disabled) { background: var(--panel); color: var(--text); }
+@media (hover: hover) and (pointer: fine) { .clear:hover:not(:disabled) { background: var(--panel); color: var(--text); } }
 
 body.h .bar { justify-content: flex-start; gap: 18px; }
 body.h .move { grid-auto-flow: column; align-items: center; gap: 4px; padding: 8px 12px; font-size: 14px; }
@@ -191,17 +191,17 @@ body.h .sheet-wrap.open .sheet { transform: translate(-50%, -50%); }
 .sheet header #sheetClose { grid-column: 3; grid-row: 1; justify-self: end; }
 .sheet-body { overflow: auto; padding: 6px 14px 16px; }
 .ghost-btn { padding: 8px 12px; border-radius: 9px; color: var(--dot-text); font-size: 15px; transition: background var(--fast) ease; }
-.ghost-btn:hover { background: var(--panel-2); }
+@media (hover: hover) and (pointer: fine) { .ghost-btn:hover { background: var(--panel-2); } }
 .ghost-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; display: block; }
 
 .tunings { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .tunings li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px; }
 .tuning-pick { display: grid; justify-items: center; gap: 4px; padding: 11px 8px 10px; border-radius: 12px; background: var(--panel-2); border: 1.5px solid transparent; transition: border-color var(--fast) ease, background var(--fast) ease; }
-.tuning-pick:hover { background: var(--tuning-hover); }
+@media (hover: hover) and (pointer: fine) { .tuning-pick:hover { background: var(--tuning-hover); } }
 .tuning-pick[aria-pressed="true"] { border-color: var(--dot); }
 .tuning-pick .tn { font-size: 18px; }
 .add-btn { display: block; width: 100%; margin-top: 12px; padding: 12px; border-radius: 12px; border: 1.5px dashed var(--line); color: var(--muted); transition: color var(--fast) ease, border-color var(--fast) ease; }
-.add-btn:hover { color: var(--text); border-color: var(--muted); }
+@media (hover: hover) and (pointer: fine) { .add-btn:hover { color: var(--text); border-color: var(--muted); } }
 
 .name-input { width: 100%; font: inherit; font-size: 17px; color: var(--text); background: var(--input-bg); border: 1.5px solid var(--hair); border-radius: 11px; padding: 11px 12px; outline: none; }
 .name-input:focus { border-color: var(--dot); }
@@ -210,13 +210,13 @@ body.h .sheet-wrap.open .sheet { transform: translate(-50%, -50%); }
 .string-edit .sn { color: var(--muted); font-size: 14px; }
 .string-edit .nv { text-align: center; font-weight: 600; font-size: 18px; font-variant-numeric: tabular-nums; }
 .step { height: 38px; border-radius: 9px; background: var(--step); font-size: 20px; transition: background var(--fast) ease, opacity var(--fast) ease; }
-.step:hover:not(:disabled) { background: var(--step-hover); }
+@media (hover: hover) and (pointer: fine) { .step:hover:not(:disabled) { background: var(--step-hover); } }
 .step:disabled { opacity: 0.3; }
 .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 .primary { padding: 11px 18px; border-radius: 11px; background: var(--dot); color: #fff; font-weight: 600; transition: background var(--fast) ease; }
-.primary:hover { background: var(--dot-edge); }
+@media (hover: hover) and (pointer: fine) { .primary:hover { background: var(--dot-edge); } }
 .danger { padding: 11px 16px; border-radius: 11px; color: #d6332a; margin-right: auto; transition: background var(--fast) ease; }
-.danger:hover { background: var(--panel-2); }
+@media (hover: hover) and (pointer: fine) { .danger:hover { background: var(--panel-2); } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 1ms !important; }
@@ -234,7 +234,7 @@ body.h .sheet-wrap.open .sheet { transform: translate(-50%, -50%); }
 .title-wrap { flex: 1; min-width: 0; }
 .page-title { margin: 0; flex: 1; font-size: 30px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.15; overflow-wrap: anywhere; }
 .page-title.editable { cursor: text; border-radius: 8px; transition: background var(--fast) ease; }
-.page-title.editable:hover { background: var(--tint); }
+@media (hover: hover) and (pointer: fine) { .page-title.editable:hover { background: var(--tint); } }
 .page-meta { margin: 3px 0 0; font-size: 13px; color: var(--muted); }
 .page-top .tuning-btn .tn { font-size: 16px; }
 .empty-note { color: var(--muted); text-align: center; margin: 48px 0; font-size: 15px; }
@@ -252,7 +252,7 @@ body.h .sheet-wrap.open .sheet { transform: translate(-50%, -50%); }
   box-shadow: 0 6px 18px rgba(229, 95, 0, 0.32), 0 1px 3px rgba(0, 0, 0, 0.12);
   transition: transform 140ms var(--ease), background var(--fast) ease;
 }
-.fab:hover { background: var(--dot-edge); }
+@media (hover: hover) and (pointer: fine) { .fab:hover { background: var(--dot-edge); } }
 .fab:active { transform: scale(0.94); }
 .fab svg { width: 28px; height: 28px; stroke-width: 2.6; }
 @media (min-width: 1040px) { .fab { right: calc(50% - 490px + 14px); } }
@@ -260,14 +260,14 @@ body.h .sheet-wrap.open .sheet { transform: translate(-50%, -50%); }
 /* song list */
 .song-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .song-row { display: grid; grid-template-columns: 1fr auto; align-items: center; background: var(--panel); border-radius: 14px; transition: background var(--fast) ease, transform 120ms var(--ease); }
-.song-row:hover { background: var(--hover); }
+@media (hover: hover) and (pointer: fine) { .song-row:hover { background: var(--hover); } }
 .song-main { display: grid; gap: 4px; padding: 14px 4px 14px 16px; cursor: pointer; min-width: 0; outline: none; border-radius: 14px; }
 .song-main:focus-visible { box-shadow: inset 0 0 0 2px var(--dot); }
 .song-name { font-size: 18px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .song-meta { font-size: 13px; color: var(--muted); }
 .song-preview { font-size: 14px; color: var(--preview); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
 .icon-only { display: grid; place-items: center; width: 44px; height: 44px; margin-right: 6px; border-radius: 10px; color: var(--muted); transition: background var(--fast) ease, color var(--fast) ease; }
-.icon-only:hover { background: var(--panel-2); color: var(--text); }
+@media (hover: hover) and (pointer: fine) { .icon-only:hover { background: var(--panel-2); color: var(--text); } }
 .icon-only svg { width: 20px; height: 20px; stroke-width: 2; }
 
 /* chord cards */
@@ -278,7 +278,7 @@ body.h .sheet-wrap.open .sheet { transform: translate(-50%, -50%); }
   background: var(--panel); border-radius: 18px; padding: 14px 10px 8px; text-align: left;
   transition: transform 140ms var(--ease), box-shadow 140ms ease, background var(--fast) ease;
 }
-.chord-card:hover { background: var(--hover); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07); }
+@media (hover: hover) and (pointer: fine) { .chord-card:hover { background: var(--hover); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07); } }
 .chord-card:active { transform: scale(0.98); }
 .card-name { font-size: 26px; line-height: 1; padding: 6px 6px 0; min-height: 40px; white-space: nowrap; overflow: hidden; }
 .card-name.long { font-size: 21px; }
@@ -303,13 +303,13 @@ body.h .sheet-wrap.open .sheet { transform: translate(-50%, -50%); }
 .pos { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nav { position: relative; overflow: hidden; height: 46px; border-radius: 10px; display: grid; place-items: center; color: var(--text); transition: background var(--fast) ease, opacity var(--fast) ease; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 .nav svg { width: 26px; height: 26px; }
-.nav:hover { background: var(--panel-2); }
+@media (hover: hover) and (pointer: fine) { .nav:hover { background: var(--panel-2); } }
 .nav.dim { opacity: 0.28; }
 .nav.add { color: var(--dot-text); }
 .nav::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 5px; height: 3px; border-radius: 2px; background: var(--dot); transform: scaleX(0); transform-origin: left; opacity: 0; transition: transform 120ms ease, opacity 120ms ease; }
 .nav.holding::after { transform: scaleX(1); opacity: 1; transition: transform 480ms linear, opacity 80ms ease; }
 .save { min-width: 92px; padding: 11px 18px; border-radius: 11px; font-weight: 600; font-size: 15px; background: var(--dot); color: #fff; transition: background var(--fast) ease, color var(--fast) ease, opacity var(--fast) ease; }
-.save:hover:not(:disabled) { background: var(--dot-edge); }
+@media (hover: hover) and (pointer: fine) { .save:hover:not(:disabled) { background: var(--dot-edge); } }
 .save:disabled { background: var(--save-off-bg); color: var(--save-off-fg); }
 .save.saved { background: var(--root); color: #fff; }
 .songbar .icon-only { margin: 0; width: 40px; height: 40px; }
@@ -334,9 +334,9 @@ body.h .songbar { max-width: 560px; justify-self: start; width: 100%; }
 .dialog p { margin: 0 0 6px; color: var(--muted); font-size: 15px; line-height: 1.4; }
 .dialog-buttons { display: flex; justify-content: flex-end; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
 .dialog-buttons button { padding: 10px 14px; border-radius: 10px; font-size: 15px; transition: background var(--fast) ease; }
-.dialog-buttons .plain:hover { background: var(--panel-2); }
+@media (hover: hover) and (pointer: fine) { .dialog-buttons .plain:hover { background: var(--panel-2); } }
 .danger-fill { background: #d6332a; color: #fff; font-weight: 600; }
-.danger-fill:hover { background: #bf2a22; }
+@media (hover: hover) and (pointer: fine) { .danger-fill:hover { background: #bf2a22; } }
 
 /* ---- toast ---- */
 .toast { position: fixed; z-index: 30; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translate(-50%, 10px); max-width: calc(100% - 32px); background: #2a2a28; color: #fff; font-size: 14px; padding: 10px 16px; border-radius: 12px; opacity: 0; pointer-events: none; transition: opacity 160ms ease, transform 160ms var(--ease); }
@@ -355,7 +355,7 @@ body.h .songbar { max-width: 560px; justify-self: start; width: 100%; }
 .a-bar .tuning-btn .tn { font-size: 14px; }
 .a-bar .tuning-btn .tname { font-size: 11px; }
 body.song-mode .a-bar .tuning-btn { cursor: default; }
-body.song-mode .a-bar .tuning-btn:hover { background: none; }
+@media (hover: hover) and (pointer: fine) { body.song-mode .a-bar .tuning-btn:hover { background: none; } }
 .bar { gap: 6px; }
 .bar .clear { padding: 8px 10px; }
 .scratchbar { display: flex; justify-content: center; padding: 2px 0 0; }
@@ -368,10 +368,10 @@ body.h .scratchbar { justify-content: flex-start; }
 .song-head-row .back { margin-left: -8px; }
 .song-title { margin: 0; font-size: 24px; font-weight: 650; letter-spacing: -0.01em; line-height: 1.2; overflow-wrap: anywhere; min-width: 0; padding: 2px 4px; border-radius: 8px; }
 .song-title.editable { cursor: text; transition: background var(--fast) ease; }
-.song-title.editable:hover { background: var(--tint); }
+@media (hover: hover) and (pointer: fine) { .song-title.editable:hover { background: var(--tint); } }
 .song-head .page-meta { margin: 0 0 4px 36px; }
 .tuning-chip { justify-self: start; display: inline-flex; align-items: baseline; gap: 10px; margin-left: 32px; padding: 7px 12px; border-radius: 10px; background: var(--panel); transition: background var(--fast) ease; max-width: calc(100% - 32px); }
-.tuning-chip:hover { background: var(--hover); }
+@media (hover: hover) and (pointer: fine) { .tuning-chip:hover { background: var(--hover); } }
 .tuning-chip .tn { font-size: 15px; }
 .tuning-chip .tname { font-size: 13px; }
 
@@ -379,19 +379,19 @@ body.h .scratchbar { justify-content: flex-start; }
 .song-name-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .song-name-row .tray { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--dot-text); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .inbox-row { grid-template-columns: 1fr; background: var(--inbox-bg); border: 1.5px dashed var(--inbox-border); }
-.inbox-row:hover { background: var(--inbox-hover); }
+@media (hover: hover) and (pointer: fine) { .inbox-row:hover { background: var(--inbox-hover); } }
 .song-row { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .song-row.lifted { transform: scale(1.02); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); }
 
 /* ---- sections in the chord grid ---- */
 .section-item { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; padding: 14px 4px 2px; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; border-radius: 10px; transition: background var(--fast) ease, transform 140ms var(--ease); }
 .section-name { font-size: 15px; font-weight: 650; letter-spacing: 0.02em; text-transform: uppercase; color: var(--section); cursor: text; padding: 2px 4px; border-radius: 6px; white-space: nowrap; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
-.section-name:hover { background: var(--tint); }
+@media (hover: hover) and (pointer: fine) { .section-name:hover { background: var(--tint); } }
 .section-name .inline-input { text-transform: none; font-weight: 600; min-width: 160px; }
 .section-line { flex: 1; height: 1.5px; background: var(--section-line); border-radius: 1px; }
 .grid-foot { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 20px; }
 .add-section { padding: 9px 16px; border-radius: 10px; border: 1.5px dashed var(--line); color: var(--muted); font-size: 14px; transition: color var(--fast) ease, border-color var(--fast) ease; }
-.add-section:hover { color: var(--text); border-color: var(--muted); }
+@media (hover: hover) and (pointer: fine) { .add-section:hover { color: var(--text); border-color: var(--muted); } }
 .grid-hint { font-size: 12px; color: var(--faint); text-align: center; }
 .card-tuning { font-size: 11px; color: var(--muted); text-align: center; margin-top: 2px; }
 
@@ -408,7 +408,7 @@ body.dragging, body.dragging * { cursor: grabbing !important; }
 .dialog-wrap.as-menu h3 { padding: 10px 12px 6px; margin: 0; font-size: 14px; font-weight: 600; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu-items { display: grid; gap: 2px; max-height: min(60vh, 520px); overflow: auto; }
 .menu-item { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; width: 100%; text-align: left; padding: 13px 12px; border-radius: 11px; font-size: 16px; transition: background var(--fast) ease; }
-.menu-item:hover { background: var(--panel-2); }
+@media (hover: hover) and (pointer: fine) { .menu-item:hover { background: var(--panel-2); } }
 .menu-item.danger { color: #d6332a; }
 .menu-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu-hint { flex: none; font-size: 13px; color: var(--muted); }
@@ -435,7 +435,7 @@ body.h .side .bar { justify-content: flex-start; gap: 14px; padding-top: 2px; }
 /* bottom bar: one even row */
 .songbar { display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 16px; }
 .songbar .nav { width: 48px; height: 44px; flex: none; background: var(--panel-2); border-radius: 12px; }
-.songbar .nav:hover { background: var(--nav-hover); }
+@media (hover: hover) and (pointer: fine) { .songbar .nav:hover { background: var(--nav-hover); } }
 .songbar .pos { flex: none; min-width: 58px; text-align: center; font-size: 13px; }
 .songbar .save { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border-radius: 12px; }
 .songbar .icon-only { flex: none; width: 44px; height: 44px; border-radius: 12px; }
@@ -488,7 +488,7 @@ body.h .songbar { max-width: 520px; }
 /* ---- songs header: dark mode and hand switches ---- */
 .page-tools { display: flex; gap: 6px; }
 .pill { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; background: var(--panel); font-size: 13px; color: var(--strong); transition: background var(--fast) ease; white-space: nowrap; }
-.pill:hover { background: var(--hover); }
+@media (hover: hover) and (pointer: fine) { .pill:hover { background: var(--hover); } }
 .pill svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ---- floating Analyzer button, bottom left ---- */
@@ -502,7 +502,7 @@ body.h .songbar { max-width: 520px; }
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: transform 140ms var(--ease), background var(--fast) ease;
 }
-.fab-left:hover { background: var(--hover); }
+@media (hover: hover) and (pointer: fine) { .fab-left:hover { background: var(--hover); } }
 .fab-left:active { transform: scale(0.95); }
 .fab-left svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 @media (min-width: 1040px) { .fab-left { left: calc(50% - 490px + 14px); } }
@@ -563,7 +563,7 @@ body { font-variant-numeric: tabular-nums; text-rendering: optimizeLegibility; }
 .cands li + li { margin-top: 2px; }
 .cands button { padding: 13px 14px 11px; border-radius: var(--r-m); font-size: 24px; letter-spacing: -0.015em; }
 .cands button[aria-pressed="true"] { background: var(--selected); box-shadow: var(--edge); }
-.cands button:hover:not([aria-pressed="true"]) { background: var(--panel-2); }
+@media (hover: hover) and (pointer: fine) { .cands button:hover:not([aria-pressed="true"]) { background: var(--panel-2); } }
 body.h .cands { padding: 6px; gap: 4px; }
 body.h .cands button { padding: 14px 16px 10px; }
 
@@ -573,7 +573,7 @@ body.v .side .seg { padding: 3px; border-radius: var(--r-m); box-shadow: var(--e
 body.v .side .seg button { border-radius: var(--r-s); padding: 9px 4px; font-weight: 500; }
 .seg button[aria-pressed="true"] { background: var(--selected); box-shadow: var(--edge); }
 body.v .side .move, body.v .side .clear { min-height: 40px; border-radius: var(--r-m); box-shadow: var(--edge); font-weight: 500; }
-body.v .side .move:hover:not(:disabled), body.v .side .clear:hover:not(:disabled) { background: var(--hover); }
+@media (hover: hover) and (pointer: fine) { body.v .side .move:hover:not(:disabled), body.v .side .clear:hover:not(:disabled) { background: var(--hover); } }
 body.v .side .move:disabled, body.v .side .clear:disabled { opacity: 0.42; box-shadow: none; }
 
 .songbar { padding: 6px; gap: 8px; border-radius: var(--r-xl); box-shadow: var(--edge); }
@@ -593,13 +593,13 @@ body.v .side .move:disabled, body.v .side .clear:disabled { opacity: 0.42; box-s
 
 .song-list { gap: 10px; }
 .song-row { border-radius: var(--r-l); box-shadow: var(--edge); transition: background var(--fast) ease, box-shadow 160ms ease, transform 140ms var(--ease); }
-.song-row:hover { box-shadow: var(--lift); }
+@media (hover: hover) and (pointer: fine) { .song-row:hover { box-shadow: var(--lift); } }
 .song-main { padding: 16px 6px 16px 18px; gap: 5px; border-radius: var(--r-l); }
 .song-name { font-size: 17.5px; font-weight: 650; letter-spacing: -0.012em; }
 .song-meta { font-size: 13px; }
 .song-preview { font-size: 14px; margin-top: 1px; }
 .inbox-row { box-shadow: none; }
-.inbox-row:hover { box-shadow: none; }
+@media (hover: hover) and (pointer: fine) { .inbox-row:hover { box-shadow: none; } }
 
 .song-head { gap: 8px; margin-bottom: 20px; }
 .song-title { font-size: 25px; font-weight: 700; letter-spacing: -0.022em; }
@@ -607,7 +607,7 @@ body.v .side .move:disabled, body.v .side .clear:disabled { opacity: 0.42; box-s
 
 .chord-grid { gap: 12px; }
 .chord-card { border-radius: var(--r-xl); padding: 16px 12px 10px; box-shadow: var(--edge); transition: transform 160ms var(--ease), box-shadow 180ms ease, background var(--fast) ease; }
-.chord-card:hover { box-shadow: var(--lift); transform: translateY(-1px); }
+@media (hover: hover) and (pointer: fine) { .chord-card:hover { box-shadow: var(--lift); transform: translateY(-1px); } }
 .chord-card:active { transform: scale(0.98); }
 .card-name { padding: 4px 6px 0; letter-spacing: -0.015em; }
 .card-num { top: 14px; right: 16px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
@@ -644,7 +644,7 @@ body.h .songbar { max-width: 560px; }
 .scratchbar { display: grid; grid-template-columns: 1fr minmax(150px, auto) 1fr; align-items: center; gap: 10px; padding-top: 2px; }
 .scratchbar .save { min-width: 150px; }
 .to-song { justify-self: start; padding: 10px 12px; border-radius: var(--r-m); color: var(--dot-text); font-size: 14px; font-weight: 500; transition: background var(--fast) ease, opacity var(--fast) ease, transform 110ms var(--ease); }
-.to-song:hover:not(:disabled) { background: var(--panel); }
+@media (hover: hover) and (pointer: fine) { .to-song:hover:not(:disabled) { background: var(--panel); } }
 .to-song:active:not(:disabled) { transform: scale(0.965); }
 .to-song:disabled { opacity: 0.35; }
 body.h .scratchbar { max-width: 560px; }
@@ -683,7 +683,7 @@ body[data-view="analyzer"] .toast { bottom: calc(84px + env(safe-area-inset-bott
 .pop-menu .menu-head { padding: 9px 11px 7px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .pop-menu .menu-head span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pop-menu .menu-item { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; width: 100%; min-height: 44px; padding: 8px 11px; border-radius: 12px; text-align: left; font-size: 15.5px; font-weight: 500; }
-.pop-menu .menu-item:hover { background: var(--tint); }
+@media (hover: hover) and (pointer: fine) { .pop-menu .menu-item:hover { background: var(--tint); } }
 .pop-menu .menu-item:active { background: color-mix(in srgb, var(--text) 9%, transparent); transform: none; }
 .pop-menu .menu-label { display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pop-menu .menu-hint { font-size: 12.5px; font-weight: 400; color: var(--muted); }
@@ -711,7 +711,7 @@ body.v .iv-list { flex: 1 1 auto; display: grid; grid-template-rows: repeat(7, m
 .iv-row { display: flex; gap: 2px; min-height: 0; }
 .iv-row + .iv-row { border-top: 1px solid var(--hair); padding-top: 2px; }
 .iv { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 9px; padding: 2px 1px; color: var(--faint); transition: background var(--fast) ease, color var(--fast) ease, transform 110ms var(--ease); }
-.iv:hover { background: var(--tint); }
+@media (hover: hover) and (pointer: fine) { .iv:hover { background: var(--tint); } }
 .iv:active { transform: scale(0.94); }
 .iv-fn { font-size: 13px; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; white-space: nowrap; }
 .iv-note { font-size: 10.5px; line-height: 1.1; opacity: 0.85; white-space: nowrap; }
@@ -741,3 +741,30 @@ body.h .iv { flex-direction: row; gap: 6px; min-height: 26px; height: 26px; }
 body.h .iv-note { font-size: 11px; }
 body.h .iv-list { padding: 4px; }
 body.h .side { gap: 8px; }
+
+/* ---- 0.5.1: tighter tops, chevron tucked to the title, fixed-height chord names ---- */
+/* the header sits right under the status bar */
+.analyzer { padding-top: max(6px, calc(env(safe-area-inset-top) - 4px)); gap: 10px; }
+.a-top { padding-bottom: 0; }
+.a-bar { min-height: 40px; gap: 0; }
+.page { padding-top: max(8px, calc(env(safe-area-inset-top) - 4px)); }
+.page-top { min-height: 52px; margin-bottom: 10px; }
+.song-head { gap: 5px; margin-bottom: 14px; }
+.song-head-row { min-height: 44px; gap: 0; }
+/* back chevron: its point on the page edge, the text right after it */
+.a-bar .back, .song-head-row .back, .page-top .back { width: 36px; height: 44px; margin: 0 -6px 0 -14px; }
+.song-head-row .back { margin-right: -9px; }
+.song-head-row .back svg { width: 28px; height: 28px; stroke-width: 2.2; }
+.song-head .page-meta, .tuning-chip { margin-left: 18px; }
+.tuning-chip { max-width: calc(100% - 18px); }
+
+/* chord names: always room for four, more scroll; the functions panel below never moves */
+body.v .cands { --cand-h: 46px; flex: none; height: calc(4 * var(--cand-h) + 3 * 2px + 12px); max-height: none; }
+body.v .cands button { display: flex; align-items: center; height: var(--cand-h); padding-top: 2px; padding-bottom: 0; }
+body.v .iv-list.empty { display: block; visibility: hidden; }
+body.h .cands { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; }
+body.h .cands { height: 65px; }
+body.h .cands li { flex: none; }
+body.h .cands button { height: 53px; }
+body.h .iv-list { height: 118px; }
+body.h .iv-list.empty { display: flex; visibility: hidden; }
