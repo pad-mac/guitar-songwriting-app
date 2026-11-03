@@ -66,6 +66,9 @@ export class Fretboard {
       sec.textContent = on ? data.secondary[s] || '' : '';
       sec.classList.toggle('root', on && !!data.secondaryRoot?.[s]);
     }
+    // the fret numbers the shape uses stand out a little
+    const used = new Set(data.frets.filter((f) => f != null));
+    this.numEls.forEach((t, f) => t.classList.toggle('on', used.has(f)));
   }
 
   #maybeBuild() {
@@ -116,6 +119,11 @@ export class Fretboard {
     const cLo = Math.min(c0, cN), cHi = Math.max(c0, cN);
     const lerpC = (t) => c0 + (cN - c0) * t;
 
+    // the board itself: a soft surface behind frets and strings
+    {
+      const [x1, y1] = g.xy(g.nut, cLo - g.gap * 0.5), [x2, y2] = g.xy(g.wire(g.N), cHi + g.gap * 0.5);
+      el('rect', { class: 'board-face', x: Math.min(x1, x2), y: Math.min(y1, y2), width: Math.abs(x2 - x1), height: Math.abs(y2 - y1), rx: 8 }, svg);
+    }
     // inlays
     const inl = el('g', { class: 'inlay' }, svg);
     const ir = Math.max(4, g.r * 0.34);
@@ -132,9 +140,12 @@ export class Fretboard {
     for (let s = 0; s < g.n; s++) line(g.nut, g.across(s), g.wire(g.N), g.across(s), { 'stroke-width': 0.9 + (g.n - 1 - s) * 0.42 }, strs);
     // fret numbers
     const nums = el('g', { class: 'nums' }, svg);
+    this.numEls = [];
     for (let f = 0; f <= g.N; f++) {
       const [x, y] = g.xy(g.along(f), g.numC);
-      el('text', { x, y }, nums).textContent = f;
+      const t = el('text', { x, y }, nums);
+      t.textContent = f;
+      this.numEls.push(t);
     }
     // muted marks in the open lane
     const marks = el('g', { class: 'marks' }, svg);
