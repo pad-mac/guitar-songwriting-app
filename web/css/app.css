@@ -768,3 +768,7 @@ body.h .cands li { flex: none; }
 body.h .cands button { height: 53px; }
 body.h .iv-list { height: 118px; }
 body.h .iv-list.empty { display: flex; visibility: hidden; }
+
+/* a freshly duplicated chord fades in next to its original */
+.chord-card.just-added { animation: card-in 220ms var(--ease); }
+@keyframes card-in { from { opacity: 0; transform: scale(0.96); } }

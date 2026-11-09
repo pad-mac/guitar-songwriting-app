@@ -392,14 +392,26 @@ sortable($('chordGrid'), {
       return m;
     }
     const name = chosenName(it.frets, tuningOf(it).notes, it.root)?.text || 'Chord';
-    const m = menu({ title: name, at, items: [{ label: isInbox(S.song.song) ? 'Move to a song…' : 'Move to…', value: 'move' }, { label: 'Delete chord', value: 'delete', kind: 'danger' }] });
+    const m = menu({ title: name, at, items: [{ label: 'Duplicate', value: 'dup' }, { label: isInbox(S.song.song) ? 'Move to a song…' : 'Move to…', value: 'move' }, { label: 'Delete chord', value: 'delete', kind: 'danger' }] });
     m.then((v) => {
+      if (v === 'dup') duplicateChord(it);
       if (v === 'move') moveChord(it, name, { ...at, held: false });
       if (v === 'delete') deleteItem(it);
     });
     return m;
   },
 });
+
+/** Copy a chord in place: the copy lands right after it. */
+async function duplicateChord(it) {
+  try {
+    const index = S.song.items.findIndex((x) => x.id === it.id) + 1;
+    const res = await api('POST', `/songs/${S.song.song.id}/items`, { kind: 'chord', frets: it.frets, root: it.root, index, tuning: isInbox(S.song.song) ? tuningOf(it) : undefined });
+    S.song = { song: res.song, items: res.items };
+    renderSong();
+    [...$('chordGrid').children].find((el) => el._item?.id === res.itemId)?.classList.add('just-added');
+  } catch (e) { toast(e.message); }
+}
 
 async function deleteItem(it) {
   try { S.song = await api('DELETE', `/items/${it.id}`); renderSong(); } catch (e) { toast(e.message); }
